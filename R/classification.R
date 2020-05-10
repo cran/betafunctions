@@ -5,7 +5,7 @@
 #' @param variance The variance of the observed-score distribution.
 #' @param l The lower-bound of the observed-score distribution. Default is 0 (assuming observed scores represent proportions).
 #' @param u The upper-bound of the observed-score distribution. Default is 1 (assuming observed scores represent proportions).
-#' @param reliability The reliability of the observed scores (correlation with true-score distribution).
+#' @param reliability The reliability of the observed scores (proportion of observed-score distribution variance shared with true-score distribution).
 #' @return An estimate of the effective length of a test, given the stability of the observations it produces.
 #' @references Livingston, Samuel A. and Lewis, Charles. (1995). Estimating the Consistency and Accuracy of Classifications Based on Test Scores. Journal of Educational Measurement, 32(2).
 #' @examples
@@ -16,7 +16,7 @@
 #' hist(testdata, xlim = c(0, 100))
 #'
 #' # Suppose the reliability of this test was estimated to 0.7. To estimate and
-#' # retrieve the effective test length using \code{ETL()}:
+#' # retrieve the effective test length using ETL():
 #' ETL(mean = mean(testdata), variance = var(testdata), l = 0, u = 100,
 #' reliability = .7)
 #' @export
@@ -130,11 +130,11 @@ LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, error.model = "b
 #'
 #' # Suppose the cutoff value for attaining a pass is 50 items correct, and
 #' # that the reliability of this test was estimated to 0.7. First, compute the
-#' # estimated confusion matrix using \code{LL.CA()}:
+#' # estimated confusion matrix using LL.CA():
 #' cmat <- LL.CA(x = testdata, reliability = .7, cut = 50, min = 0,
 #' max = 100)$confusionmatrix
 #'
-#' # To estimate and retrieve diagnostic performance statistics using \code{caStats()},
+#' # To estimate and retrieve diagnostic performance statistics using caStats(),
 #' # feed it the appropriate entries of the confusion matrix.
 #' caStats(tp = cmat["True", "Fail"], tn = cmat["True", "Pass"],
 #' fp = cmat["False", "Fail"], fn = cmat["False", "Pass"])
@@ -165,8 +165,8 @@ caStats <- function(tp, tn, fp, fn) {
 #' @param truecut The true point along the x-scale that marks the categorization-threshold.
 #' @param AUC Calculate and include the area under the curve? Default is FALSE.
 #' @param maxJ Mark the point along the curve where Youden's J statistic is maximized? Default is FALSE.
-#' @param raw.out Give raw coordinates as output rather than plot? Default is \code{FALSE}.
-#' @return A plot tracing the ROC curve for the test, or matrix of coordinates if raw.out is \code{TRUE}.
+#' @param raw.out Give raw coordinates as output rather than plot? Default is FALSE.
+#' @return A plot tracing the ROC curve for the test, or matrix of coordinates if raw.out is TRUE.
 #' @examples
 #' # Generate some fictional data. Say, 100 individuals take a test with a
 #' # maximum score of 100 and a minimum score of 0.
@@ -228,7 +228,7 @@ LL.ROC <- function(x = NULL, reliability, min = 0, max = 1, truecut, AUC = FALSE
 #'
 #' @description Given a vector of false-positive rates and a vector of true-positive rates, calculate the area under the Receiver Operator Characteristic (ROC) curve.
 #' @param FPR Vector of False-Positive Rates.
-#' @param TPR Vector of True-Posiitive Rates.
+#' @param TPR Vector of True-Positive Rates.
 #' @return A value representing the area under the ROC curve.
 #' @note Script originally retrieved and modified from https://blog.revolutionanalytics.com/2016/11/calculating-auc.html.
 #' @examples
@@ -241,12 +241,12 @@ LL.ROC <- function(x = NULL, reliability, min = 0, max = 1, truecut, AUC = FALSE
 #' # Suppose the cutoff value for attaining a pass is 50 items correct, and
 #' # that the reliability of this test was estimated to 0.7. To calculate the
 #' # necessary (x, y) coordinates to compute the area under the curve statistic
-#' # one can use the \code{LL.ROC()} function with the argument
-#' # \code{raw.out = TRUE}.
+#' # one can use the LL.ROC() function with the argument
+#' # raw.out = TRUE.
 #' coords <- LL.ROC(x = testdata, reliability = .7, truecut = 50, min = 0,
 #' max = 100, raw.out = TRUE)
 #'
-#' # To calculate and retrieve the Area Under the Curve (AUC) with the \code{AUC()}
+#' # To calculate and retrieve the Area Under the Curve (AUC) with the AUC()
 #' # function, feed it the raw coordinates calculated above.
 #' AUC(coords[, "FPR"], coords[, "TPR"])
 #' @export
@@ -254,4 +254,32 @@ AUC <- function(FPR, TPR) {
   dFPR <- base::c(diff(FPR), 0)
   dTPR <- base::c(diff(TPR), 0)
   base::sum(TPR * dFPR) + sum(dTPR * dFPR)/2
+}
+
+#' Calculate Cronbach's Alpha from supplied variables.
+#'
+#' @description Calculates Cronbach's Alpha, a very commonly used index for assessing the reliability / internal consistency of a sumscore. Often interpreted as the mean correlation across all possible split-half alternate forms of the test.
+#' @param x A data-frame or matrix of numerical values where rows are across-items within-respondent observation vectors, and columns are within-item across-respondents observation vectors.
+#' @note Missing values are treated by passing \code{na.rm = TRUE} to the \code{var} function call.
+#' @note Be aware that this function does not issue a warning if there are negative correlations between variables in the supplied data-set.
+#' @return Cronbach's Alpha for the sumscore of supplied variables.
+#' @references Cronbach, L.J. (1951). Coefficient alpha and the internal structure of tests. Psychometrika 16, 297–334. doi: 10.1007/BF02310555
+#' @examples
+#' # Generate some fictional data. Say 100 students take a 50-item long test
+#' # where all items are equally difficult.
+#' set.seed(1234)
+#' p.success <- rBeta.4P(100, .25, .75, 5, 3)
+#' for (i in 1:50) {
+#'   if (i == 1) {
+#'     rawdata <- matrix(nrow = 100, ncol = 50)
+#'   }
+#'   rawdata[, i] <- rbinom(100, 1, p.success)
+#' }
+#' # To calculate Cronbach's Alpha for this test:
+#' cba(rawdata)
+#' @export
+cba <- function(x) {
+  (base::ncol(x) / (base::ncol(x) - 1)) *
+    (1 - (base::sum(base::diag(stats::var(x, na.rm = TRUE))) /
+            base::sum(stats::var(x, na.rm = TRUE))))
 }

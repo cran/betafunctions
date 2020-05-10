@@ -3,14 +3,14 @@
 #' @description Computes Raw, Central, or Standardized moment properties of defined Standard Beta probability density distributions.
 #' @param a The Alpha shape parameter of the PDD.
 #' @param b The Beta shape parameter of the PDD.
-#' @param l The first (lower) location parameter of a four-paramteer distribution.
+#' @param l The first (lower) location parameter of a four-parameter distribution.
 #' @param u The second (upper) location parameter of a four-parameter distribution.
 #' @param types A character vector determining which moment-types are to be calculated. Permissible values are "raw", "central", and "standardized".
 #' @param orders The number of moment-orders to be calculated for each of the moment-types.
 #' @examples
 #' # Assume some variable follows a four-parameter beta distribution with
-#' # location parameters \code{l = 0.25} and \code{u = .75}, and shape
-#' # parameters \code{a = 5} and \code{b = 3}. To compute the first four
+#' # location parameters l = 0.25 and u = .75, and shape
+#' # parameters a = 5 and b = 3. To compute the first four
 #' # raw, central, and standardized moments of this distrubution using
 #' # \code{betamoments()}:
 #' betamoments(a = 5, b = 3, l = .25, u = .75,
@@ -67,7 +67,7 @@ betamoments <- function(a, b, l = 0, u = 1, types = c("raw", "central", "standar
 #' hist(testdata, xlim = c(0, 100))
 #'
 #' # To compute the first four raw, central, and standardized moments for this
-#' # distribution of observed scores using \code{observedmoments()}:
+#' # distribution of observed scores using observedmoments():
 #' observedmoments(x = testdata, type = c("raw", "central", "standardized"),
 #' orders = 4, correct = TRUE)
 #' @export
@@ -131,7 +131,7 @@ observedmoments <- function(x, type = c("raw", "central", "standardized"),  orde
 #'
 #' # To find the alpha shape-parameter of a Standard (two-parameter) Beta
 #' # distribution with the same mean and variance as the observed-score
-#' # distribution using \code{AMS()}:
+#' # distribution using AMS():
 #' AMS(mean(testdata), var(testdata))
 #' @export
 AMS <- function(mean, var, sd = NULL) {
@@ -164,7 +164,7 @@ AMS <- function(mean, var, sd = NULL) {
 #'
 #' # To find the beta shape-parameter of a Standard (two-parameter) Beta
 #' # distribution with the same mean and variance as the observed-score
-#' # distribution using \code{BMS()}:
+#' # distribution using BMS():
 #' BMS(mean(testdata), var(testdata))
 #' @export
 BMS <- function(mean, var, sd = NULL) {
@@ -280,12 +280,12 @@ rBetaMS <- function(n, mean, var = NULL, sd = NULL) {
 #' @param alpha The Alpha shape-parameter value for the Standard Beta probability density distribution.
 #' @param beta The Beta shape-parameter fort he Standard Beta probability density distribution.
 #' @param l The lower-bound location parameter of the Beta distribution.
-#' @param u The upper-bound location parameter of the Beta distrubution.
+#' @param u The upper-bound location parameter of the Beta distribution.
 #' @return A two-column matrix with density-values of y to plot against corresponding location values of x.
 #' @examples
 #' # To box in an area under a four-parameter beta distribution with location
-#' # parameters \code{l = .25} and \code{u = 75}, and shape parameters
-#' # \code{alpha = 5} and \code{beta = 3}, from .4 to .6:
+#' # parameters l = .25 and u = .75, and shape parameters
+#' # alpha = 5 and beta = 3, from .4 to .6:
 #' plot(NULL, xlim = c(0, 1), ylim = c(0, 7))
 #' coords <- Beta.gfx.poly.pdf(from = .4, to = .6, by = .001, alpha = 5,
 #' beta = 3, l = .25, u = .75)
@@ -313,12 +313,12 @@ Beta.gfx.poly.pdf <- function(from, to, by, alpha, beta, l = 0, u = 1) {
 #' @param alpha The Alpha shape-parameter value for the Standard Beta probability density distribution.
 #' @param beta The Beta shape-parameter fort he Standard Beta probability density distribution.
 #' @param l The lower-bound location parameter of the Beta distribution.
-#' @param u The upper-bound location parameter of the Beta distrubution.
+#' @param u The upper-bound location parameter of the Beta distribution.
 #' @return A two-column matrix with density-values of y to plot against corresponding location values of x.
 #' @examples
 #' # To box in an area under a four-parameter beta quantle distribution with
-#' # location parameters \code{l = .25} and \code{u = 75}, and shape parameters
-#' # \code{alpha = 5} and \code{beta = 3}, from .4 to .6:
+#' # location parameters l = .25 and u = 75, and shape parameters
+#' # alpha = 5 and beta = 3, from .4 to .6:
 #' plot(NULL, xlim = c(0, 1), ylim = c(0, 1))
 #' coords <- Beta.gfx.poly.qdf(from = .4, to = .6, by = .001, alpha = 5,
 #' beta = 3, l = .25, u = .75)
@@ -342,15 +342,16 @@ Beta.gfx.poly.qdf <- function(from, to, by, alpha, beta, l = 0, u = 1) {
 #' @description Plotting tool, producing a two-column matrix with values of \code{y} corresponding to locations on \code{x}. Useful for shading areas under the curve when tracing the line for the Standard Beta probability density function.
 #' @param from The point of the x-axis from where to start producing y-density values.
 #' @param to The point of the x-axis to where y-density values are to be produced.
-#' @param by The resolution (or specing) at which to produce y-density values.
+#' @param by The resolution (or spacing) at which to produce y-density values.
 #' @param alpha The Alpha shape-parameter value for the Standard Beta probability density distribution.
 #' @param beta The Beta shape-parameter fort he Standard Beta probability density distribution.
 #' @param l The lower-bound location parameter of the Beta distribution.
-#' @param u The upper-bound location parameter of the Beta distrubution.
+#' @param u The upper-bound location parameter of the Beta distribution.
 #' @return A two-column matrix with density-values of y to plot against corresponding location values of x.
+#' @examples
 #' # To box in an area under a four-parameter beta cumulative distribution with
-#' # location parameters \code{l = .25} and \code{u = 75}, and shape parameters
-#' # \code{alpha = 5} and \code{beta = 3}, from .4 to .6:
+#' # location parameters l = .25 and u = 75, and shape parameters
+#' # alpha = 5 and beta = 3, from .4 to .6:
 #' plot(NULL, xlim = c(0, 1), ylim = c(0, 1))
 #' coords <- Beta.gfx.poly.cdf(from = .4, to = .6, by = .001, alpha = 5,
 #' beta = 3, l = .25, u = .75)
@@ -445,19 +446,19 @@ MLM <- function(a, b, x = NULL, n = NULL) {
 
 #' Probability Density under the Four-Parameter Beta PDD.
 #'
-#' @description Gives the density at desired values of X under the Four-Parameter Beta PDD.
-#' @param x Value of X.
+#' @description Gives the density at desired values of \code{x} under the Four-Parameter Beta PDD.
+#' @param x Value of \code{x}.
 #' @param l The first (lower) location parameter.
-#' @param u The second (upper) location paraeter.
+#' @param u The second (upper) location parameter.
 #' @param alpha The first shape parameter.
 #' @param beta The second shape parameter.
 #' @return The value for the probability density at specified values of X.
 #' @examples
 #' # Assume some variable follows a four-parameter beta distribution with
-#' # location parameters \code{l = 0.25} and \code{u = .75}, and shape
-#' # parameters \code{alpha = 5} and \code{beta = 3}. To compute the
+#' # location parameters l = 0.25 and u = .75, and shape
+#' # parameters alpha = 5 and beta = 3. To compute the
 #' # probability density at a specific point of the distribution (e.g., .5)
-#' # using \code{dBeta.4P()}:
+#' # using dBeta.4P():
 #' dBeta.4P(x = .5, l = .25, u = .75, alpha = 5, beta = 3)
 #' @export
 dBeta.4P <- function(x, l, u, alpha, beta) {
@@ -483,9 +484,9 @@ dBeta.4P <- function(x, l, u, alpha, beta) {
 #' @return A vector with length \code{n} of random values drawn from the four-parameter beta distribution.
 #' @examples
 #' # Assume some variable follows a four-parameter beta distribution with
-#' # location parameters \code{l = 0.25} and \code{u = .75}, and shape
-#' # parameters \code{alpha = 5} and \code{beta = 3}. To draw a random
-#' # value from this distribution using \code{rBeta.4P()}:
+#' # location parameters l = 0.25 and u = .75, and shape
+#' # parameters alpha = 5 and beta = 3. To draw a random
+#' # value from this distribution using rBeta.4P():
 #' rBeta.4P(n = 1, l = .25, u = .75, alpha = 5, beta = 3)
 #' @export
 rBeta.4P <- function(n, l, u, alpha, beta) {
@@ -504,10 +505,10 @@ rBeta.4P <- function(n, l, u, alpha, beta) {
 #' @return A vector of proportions of observations falling under specified quantiles under the four-parameter beta distribution.
 #' @examples
 #' # Assume some variable follows a four-parameter beta distribution with
-#' # location parameters \code{l = 0.25} and \code{u = .75}, and shape
-#' # parameters \code{alpha = 5} and \code{beta = 3}. To compute the
+#' # location parameters l = 0.25 and u = .75, and shape
+#' # parameters alpha = 5 and beta = 3. To compute the
 #' # cumulative probability at a specific point of the distribution (e.g., .5)
-#' # using \code{pBeta.4P()}:
+#' # using pBeta.4P():
 #' pBeta.4P(q = .5, l = .25, u = .75, alpha = 5, beta = 3)
 #' @export
 pBeta.4P <- function(q, l, u, alpha, beta, lt = TRUE) {
@@ -535,10 +536,10 @@ pBeta.4P <- function(q, l, u, alpha, beta, lt = TRUE) {
 #' @return A vector of quantiles for specified probabilities or proportions of observations under the four-parameter beta distribution.
 #' @examples
 #' # Assume some variable follows a four-parameter beta distribution with
-#' # location parameters \code{l = 0.25} and \code{u = .75}, and shape
-#' # parameters \code{alpha = 5} and \code{beta = 3}. To compute the
+#' # location parameters l = 0.25 and u = .75, and shape
+#' # parameters alpha = 5 and beta = 3. To compute the
 #' # quantile at a specific point of the distribution (e.g., .5)
-#' # using \code{qBeta.4P()}:
+#' # using qBeta.4P():
 #' qBeta.4P(p = .5, l = .25, u = .75, alpha = 5, beta = 3)
 #' @export
 qBeta.4P <- function(p, l, u, alpha, beta, lt = TRUE) {
@@ -564,7 +565,7 @@ qBeta.4P <- function(p, l, u, alpha, beta, lt = TRUE) {
 #' hist(testdata, xlim = c(0, 100))
 #'
 #' # To fit and retrieve the parameters for a four-parameter beta distribution
-#' # to the observed-score distribution using \code{Beta.4p.fit()}:
+#' # to the observed-score distribution using Beta.4p.fit():
 #' Beta.4p.fit(testdata)
 #' @export
 Beta.4p.fit <- function(scores) {
