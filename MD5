@@ -1,9 +1,9 @@
-1519b1b59549b9d7831fc4e9cf50849f *DESCRIPTION
-331d48ca534a3a2ace118235c644318f *NAMESPACE
-48ddab2619a3390678df4d3fc8d55758 *NEWS.md
-9daaa97a72721d02bb431d98f11e76fb *R/betafunctions.R
-65ce387de849f0ffce4ecf5657f49c07 *R/classification.R
-663598086327217f808b05e7286d63ca *README.md
+1021da0e5996fad3fcf9413245aedba8 *DESCRIPTION
+672eb1575908f9a130af2c429faf7887 *NAMESPACE
+291980c254cd683b022aadc4c02913ce *NEWS.md
+a34eb78d44efeda6aafd161fdd153748 *R/betafunctions.R
+9afbe80dc8da6a8caefd35f70b882f7e *R/classification.R
+fe4f21a601fe679d44c14686775b586f *README.md
 2dbc0dfc464bd6f4fd663615cfd02c8e *man/AMS.Rd
 c863fbafe62ce8cc90cb1dab483f9fac *man/AUC.Rd
 459c2abc52ae82da82c1e98f995c3f01 *man/BMS.Rd
@@ -12,8 +12,9 @@ a5cb0573cb698e75cdd2c8e7ae345134 *man/Beta.4p.fit.Rd
 e2c0a4809879ced214b3b8e04c18ff5a *man/Beta.gfx.poly.cdf.Rd
 0a6439fbc888cba22dab30ce2d8b98f8 *man/Beta.gfx.poly.pdf.Rd
 86552023cb5997fb09d46766ddb9272c *man/Beta.gfx.poly.qdf.Rd
+f53c1153b9d2144cdc9186149c86107f *man/Beta.tp.fit.Rd
 dec6ac894e9a31c076dc29ab60915e95 *man/ETL.Rd
-6e4abe065bec3f4a62f021941cb1800f *man/LL.CA.Rd
+585cb710320df1f3f37e49a8efeef5b7 *man/LL.CA.Rd
 f3d8255857f64db92ec76f2b2fd870fa *man/LL.ROC.Rd
 4abd9a23f6c82fef8440b9c69f9689ea *man/MLA.Rd
 27886332f8de1ed18b982df248e9e7a2 *man/MLB.Rd
@@ -21,7 +22,7 @@ e3dc72e5adab0d11e05fd4860043e450 *man/MLM.Rd
 b9834f15e3854f8300391e8ceaa4fdfb *man/betamoments.Rd
 da339faaa5f74ad48ac2b19a4a45980a *man/caStats.Rd
 c2536c557cec9cc6dabcd48c1ce51ab3 *man/cba.Rd
-c18bbca58d0c5128b1e8c2990f8aa384 *man/ccStats.Rd
+ff304a766ee5c4f088b8d8cc940c7370 *man/ccStats.Rd
 ebba8fe2e96fa464c4f759c02f5afa52 *man/dBeta.4P.Rd
 5ce6243b52e8df7b70443deaa9e5bd3a *man/dBeta.pBeta.Rd
 27d6a23d163c6984c5eed57c7b9a761e *man/dBeta.pBinom.Rd

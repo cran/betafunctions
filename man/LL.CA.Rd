@@ -29,7 +29,7 @@ LL.CA(
 
 \item{error.model}{The probability distribution to be used for producing the sampling distributions at different points of the true-score scale. Options are \code{binomial} and \code{beta}. The binomial distribution is discrete, and is the distribution used originally by Livingston and Lewis. Use of the binomial distribution involves a rounding of the effective test length to the nearest integer value. The Beta distribution is continuous, and does not involve rounding of the effective test length.}
 
-\item{truecut}{Optional specification of a "true" cutoff. Useful for producing ROC curves.}
+\item{truecut}{Optional specification of a "true" cutoff. Useful for producing ROC curves (see documentation for the \code{LL.ROC()} function).}
 
 \item{output}{Character vector indicating which types of statistics (i.e, accuracy and/or consistency) are to be computed and included in the output. Permissible values are \code{"accuracy"} and \code{"consistency"}.}
 
@@ -59,11 +59,12 @@ LL.CA(x = testdata, reliability = .7, cut = 50, min = 0, max = 100)
 
 # Alternatively to supplying scores to which a true-score distribution is
 # to be fit, a list with true-score distribution parameter values can be
-# supplied manually, foregoing the need for actual data. The list entries
-# must be named. "l" is the lower-bound and "u" the upper-bound location
-# parameters of the true-score distribution, and "alpha" and "beta" the
-# shape parameters.
-trueparams <- list("l" = 0.25, "u" = 0.75, "alpha" = 5, "beta" = 3)
+# supplied manually along with the effective test length (see documentation
+# for the ETL() function), foregoing the need for actual data. The list
+# entries must be named. "l" is the lower-bound and "u" the upper-bound
+# location parameters of the true-score distribution, and "alpha" and "beta"
+# the shape parameters, and "etl" for the effective test-length..
+trueparams <- list("l" = 0.25, "u" = 0.75, "alpha" = 5, "beta" = 3, "etl" = 50)
 LL.CA(x = trueparams, reliability = .7, cut = 50, min = 0, max = 100)
 }
 \references{
