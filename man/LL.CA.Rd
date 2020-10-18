@@ -10,10 +10,14 @@ LL.CA(
   cut,
   min = 0,
   max = 1,
+  true.model = "4P",
   error.model = "binomial",
   truecut = NULL,
   output = c("accuracy", "consistency"),
-  override = FALSE
+  failsafe = FALSE,
+  l = 0,
+  u = 1,
+  override = NULL
 )
 }
 \arguments{
@@ -27,13 +31,21 @@ LL.CA(
 
 \item{max}{The maximum value possible to attain on the test. Default is 1 (assuming \code{x} represent proportions).}
 
+\item{true.model}{The probability distribution to be fitted to the moments of the true-score distribution. Options are \code{"4P"} (default) and \code{"2P"}, referring to four- and two-parameter Beta distributions. The "4P" method produces a four-parameter Beta distribution with the same first four moments (mean, variance, skewness, and kurtosis) as the estimated true-score distribution, while the "2P" method produces a two-parameter Beta distribution with the first two moments (mean and variance) as the estimated true-score distribution.}
+
 \item{error.model}{The probability distribution to be used for producing the sampling distributions at different points of the true-score scale. Options are \code{binomial} and \code{beta}. The binomial distribution is discrete, and is the distribution used originally by Livingston and Lewis. Use of the binomial distribution involves a rounding of the effective test length to the nearest integer value. The Beta distribution is continuous, and does not involve rounding of the effective test length.}
 
 \item{truecut}{Optional specification of a "true" cutoff. Useful for producing ROC curves (see documentation for the \code{LL.ROC()} function).}
 
 \item{output}{Character vector indicating which types of statistics (i.e, accuracy and/or consistency) are to be computed and included in the output. Permissible values are \code{"accuracy"} and \code{"consistency"}.}
 
-\item{override}{Logical value indicating whether to override the automatic default to the two-parameter Beta true-score distribution if the four-parameter fitting procedure produces impermissible parameter estimates. Default is \code{FALSE}.}
+\item{failsafe}{Logical value indicating whether to engage the automatic failsafe defaulting to the two-parameter Beta true-score distribution if the four-parameter fitting procedure produces impermissible parameter estimates. Default is \code{FALSE} (i.e., the function will not engage failsafe, and will likely produce an error if impermissible parameter estimates were produced.}
+
+\item{l}{If \code{true.model = "2P"} or \code{failsafe = TRUE}, the lower-bound location parameter to be used in the two-parameter fitting procedure. Default is 0 (i.e., the )}
+
+\item{u}{If \code{true.model = "2P"} or \code{failsafe = TRUE}, the upper-bound location parameter to be used in the two-parameter fitting procedure.}
+
+\item{override}{Inert artifact from betafunctions version 1.3.1 (replaced by the \code{failsafe} argument). Will be removed completely in a later update.}
 }
 \value{
 A list containing the estimated parameters necessary for the approach (i.e., the effective test-length and the beta distribution parameters), the confusion matrix containing estimated proportions of true/false pass/fail categorizations for a test, diagnostic performance statistics, and / or a classification consistency matrix and indices. Accuracy output includes a confusion matrix and diagnostic performance indices, and consistency output includes a consistency matrix and consistency indices \code{p} (expected proportion of agreement between two independent test administrations), \code{p_c} (proportion of agreement on two independent administrations expected by chance alone), and \code{Kappa} (Cohen's Kappa).
@@ -48,7 +60,7 @@ It should be noted that this implementation differs from the original articulati
 # Generate some fictional data. Say, 100 individuals take a test with a
 # maximum score of 100 and a minimum score of 0.
 set.seed(1234)
-testdata <- rbinom(100, 100, rBeta.4P(100, .25, .75, 5, 3))
+testdata <- rbinom(100, 100, rBeta.4P(100, 0.25, 0.75, 5, 3))
 hist(testdata, xlim = c(0, 100))
 
 # Suppose the cutoff value for attaining a pass is 50 items correct, and
@@ -57,15 +69,34 @@ hist(testdata, xlim = c(0, 100))
 # accuracy statistics using LL.CA():
 LL.CA(x = testdata, reliability = .7, cut = 50, min = 0, max = 100)
 
+# Suppose the true-score parameter estimation procedure arrived at
+# impermissible parameter estimates (i.e., l < 0, u > 1, alpha < 0, or
+# beta < 0). For example:
+set.seed(9)
+testdata <- rbinom(100, 25, rBeta.4P(100, 0.25, 1, 5, 3))
+Beta.tp.fit(testdata, 0, 25, 25, failsafe = TRUE)
+
+# Suppose further that you have good grounds for assuming that the lower-
+# bound parameter is equal to 0.25 (e.g., the test consists of multiple-
+# choice questions with four response options, leading to a 25\% probability
+# of guessing the correct answer per question), and good reason to believe
+# that the upper-bound parameter is equal to 1 (i.e., there is no reason to
+# believe that there are no members of the population who will attain a
+# perfect score across all possible test-forms.) To set these lower and
+# upper bounds for the fitting procedure in the LL.CA() function, set
+# the argument true.model = "2p", and specify the location parameters
+# l = 0.25 and u = 1:
+LL.CA(testdata, 0.6287713, 12, 0, 25, true.model = "2p", l = 0.25, u = 1)
+
 # Alternatively to supplying scores to which a true-score distribution is
 # to be fit, a list with true-score distribution parameter values can be
 # supplied manually along with the effective test length (see documentation
 # for the ETL() function), foregoing the need for actual data. The list
 # entries must be named. "l" is the lower-bound and "u" the upper-bound
-# location parameters of the true-score distribution, and "alpha" and "beta"
+# location parameters of the true-score distribution, "alpha" and "beta" for
 # the shape parameters, and "etl" for the effective test-length..
 trueparams <- list("l" = 0.25, "u" = 0.75, "alpha" = 5, "beta" = 3, "etl" = 50)
-LL.CA(x = trueparams, reliability = .7, cut = 50, min = 0, max = 100)
+LL.CA(x = trueparams, cut = 50, min = 0, max = 100)
 }
 \references{
 Livingston, Samuel A. and Lewis, Charles. (1995). Estimating the Consistency and Accuracy of Classifications Based on Test Scores. Journal of Educational Measurement, 32(2).
