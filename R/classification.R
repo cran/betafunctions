@@ -3,8 +3,8 @@
 #' @description  According to Livingston and Lewis (1995), "The effective test length corresponding to a test score is the number of discrete, dichotomously scored, locally independent, equally difficult items required to produce a total score of the same reliability."
 #' @param mean The mean of the observed-score distribution.
 #' @param variance The variance of the observed-score distribution.
-#' @param l The lower-bound of the observed-score distribution. Default is 0 (assuming observed scores represent proportions).
-#' @param u The upper-bound of the observed-score distribution. Default is 1 (assuming observed scores represent proportions).
+#' @param min The lower-bound (minimum possible value) of the observed-score distribution. Default is 0 (assuming observed scores represent proportions).
+#' @param max The upper-bound (maximum possible value) of the observed-score distribution. Default is 1 (assuming observed scores represent proportions).
 #' @param reliability The reliability of the observed scores (proportion of observed-score distribution variance shared with true-score distribution).
 #' @return An estimate of the effective length of a test, given the stability of the observations it produces.
 #' @references Livingston, Samuel A. and Lewis, Charles. (1995). Estimating the Consistency and Accuracy of Classifications Based on Test Scores. Journal of Educational Measurement, 32(2).
@@ -17,17 +17,17 @@
 #'
 #' # Suppose the reliability of this test was estimated to 0.7. To estimate and
 #' # retrieve the effective test length using ETL():
-#' ETL(mean = mean(testdata), variance = var(testdata), l = 0, u = 100,
+#' ETL(mean = mean(testdata), variance = var(testdata), min = 0, max = 100,
 #' reliability = .7)
 #' @export
-ETL <- function(mean, variance, l = 0, u = 1, reliability) {
-  ((mean - l) * (u - mean) - (reliability * variance)) / (variance * (1 - reliability))
+ETL <- function(mean, variance, min = 0, max = 1, reliability) {
+  ((mean - min) * (max - mean) - (reliability * variance)) / (variance * (1 - reliability))
 }
 
 #' An Implementation of the Livingston and Lewis (1995) Approach to Estimate Classification Consistency and Accuracy based on Observed Test Scores and Test Reliability.
 #'
 #' @description An implementation of what has been come to be known as the "Livingston and Lewis approach" to classification consistency and accuracy, which by employing a compound beta-binomial distribution assumes that true-scores conform to the four-parameter beta distribution, and errors of measurement to the binomial distribution. Under these assumptions, the expected classification consistency and accuracy of tests can be estimated from observed outcomes and test reliability.
-#' @param x A vector of observed scores for which a beta-distribution is to be fitted, or a list of pre-defined true-score distribution parameter values. If a list is provided, the list entries must be named after the parameters: \code{l} and \code{u} for the location parameters, and \code{alpha} and \code{beta} for the shape parameters.
+#' @param x A vector of observed scores for which a Beta true-score distribution is to be estimated, or a list of pre-defined true-score distribution parameter values. If a list is provided, the list entries must be named after the parameters: \code{l} and \code{u} for the location parameters, \code{alpha} and \code{beta} for the shape parameters, and \code{etl} for the effective test length (see documentation for the \code{ETL} function).
 #' @param reliability The observed-score squared correlation (i.e., proportion of shared variance) with the true-score.
 #' @param min The minimum value possible to attain on the test. Default is 0 (assuming \code{x} represent proportions).
 #' @param max The maximum value possible to attain on the test. Default is 1 (assuming \code{x} represent proportions).
@@ -37,8 +37,8 @@ ETL <- function(mean, variance, l = 0, u = 1, reliability) {
 #' @param truecut Optional specification of a "true" cutoff. Useful for producing ROC curves (see documentation for the \code{LL.ROC()} function).
 #' @param output Character vector indicating which types of statistics (i.e, accuracy and/or consistency) are to be computed and included in the output. Permissible values are \code{"accuracy"} and \code{"consistency"}.
 #' @param failsafe Logical value indicating whether to engage the automatic failsafe defaulting to the two-parameter Beta true-score distribution if the four-parameter fitting procedure produces impermissible parameter estimates. Default is \code{FALSE} (i.e., the function will not engage failsafe, and will likely produce an error if impermissible parameter estimates were produced.
-#' @param l If \code{true.model = "2P"} or \code{failsafe = TRUE}, the lower-bound location parameter to be used in the two-parameter fitting procedure. Default is 0 (i.e., the )
-#' @param u If \code{true.model = "2P"} or \code{failsafe = TRUE}, the upper-bound location parameter to be used in the two-parameter fitting procedure.
+#' @param l If \code{true.model = "2P"} or \code{failsafe = TRUE}, the lower-bound location parameter to be used in the two-parameter fitting procedure. Default is 0 (i.e., the lower-bound of the Standard Beta distribution).
+#' @param u If \code{true.model = "2P"} or \code{failsafe = TRUE}, the upper-bound location parameter to be used in the two-parameter fitting procedure. Default is 1 (i.e., the upper-bound of the Standard Beta distribution).
 #' @param override Inert artifact from betafunctions version 1.3.1 (replaced by the \code{failsafe} argument). Will be removed completely in a later update.
 #' @return A list containing the estimated parameters necessary for the approach (i.e., the effective test-length and the beta distribution parameters), the confusion matrix containing estimated proportions of true/false pass/fail categorizations for a test, diagnostic performance statistics, and / or a classification consistency matrix and indices. Accuracy output includes a confusion matrix and diagnostic performance indices, and consistency output includes a consistency matrix and consistency indices \code{p} (expected proportion of agreement between two independent test administrations), \code{p_c} (proportion of agreement on two independent administrations expected by chance alone), and \code{Kappa} (Cohen's Kappa).
 #' @note It should be noted that this implementation differs from the original articulation of Livingston and Lewis (1995) in some respects. First, the procedure includes a number of diagnostic performance (accuracy) indices which the original procedure enables but that were not included. Second, the possibility of employing a two-parameter Beta error distribution in place of the binomial error distribution is not part of the original procedure. Third, the way consistency is calculated differs substantially from the original articulation of the procedure, which made use of a split-half approach. Rather, this implementation uses the approach to calculating classification consistency outlined by Hanson (1991).
@@ -97,7 +97,7 @@ LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P
       warning(paste("Observed values not within the specified [", min, ", ", max, "] bounds (observed min = ",
                     min(x), ", observed max = ", max(x), ").", sep = ""))
     }
-    N <- ETL(base::mean(x), stats::var(x), l = min, u = max, reliability = reliability)
+    N <- ETL(base::mean(x), stats::var(x), min = min, max = max, reliability = reliability)
     params <- Beta.tp.fit(x, min = min, max = max, etl = N, true.model = true.model, failsafe = failsafe, l = l, u = u)
     if (params$l < 0 | params$u > 1 | params$alpha < 0 | params$beta < 0) {
       warning(paste("Parameter out of bounds: l = ", round(params$l, 4), ", u = ", round(params$u, 4), ", alpha = ", round(params$alpha, 4), ", beta = ", round(params$beta, 4),
@@ -291,6 +291,9 @@ ccStats <- function(ii, ij, ji, jj) {
 #' @param truecut The true point along the x-scale that marks the categorization-threshold.
 #' @param true.model The probability distribution to be fitted to the moments of the true-score distribution. Options are \code{"4P"} (default) and \code{"2P"}, referring to four- and two-parameter Beta distributions. The "4P" method produces a four-parameter Beta distribution with the same first four moments (mean, variance, skewness, and kurtosis) as the estimated true-score distribution, while the "2P" method produces a two-parameter Beta distribution with the first two moments (mean and variance) as the estimated true-score distribution.
 #' @param error.model The probability distribution to be used for producing the sampling distributions at different points of the true-score scale. Options are \code{binomial} and \code{beta}. The binomial distribution is discrete, and is the distribution used originally by Livingston and Lewis. Use of the binomial distribution involves a rounding of the effective test length to the nearest integer value. The Beta distribution is continuous, and does not involve rounding of the effective test length.
+#' @param failsafe If true-model == "4P": Whether to engage a fail-safe reverting to a two-parameter true-score distribution solution should the four-parameter fitting procedure produce impermissible results.
+#' @param l If true-model == "2P" or failsafe == TRUE: The lower-bound location parameter of the two-parameter true-score distribution solution.
+#' @param u If true-model == "2P" or failsafe == TRUE: The upper-bound location parameter of the two-parameter true-score distribution solution.
 #' @param AUC Calculate and include the area under the curve? Default is \code{FALSE}.
 #' @param maxJ Mark the point along the curve where Youden's J statistic is maximized? Default is \code{FALSE}.
 #' @param raw.out Give raw coordinates as output rather than plot? Default is \code{FALSE}.
@@ -310,7 +313,7 @@ ccStats <- function(ii, ij, ji, jj) {
 #' LL.ROC(x = testdata, reliability = .7, truecut = 50, min = 0, max = 100,
 #' AUC = TRUE, maxJ = TRUE)
 #' @export
-LL.ROC <- function(x = NULL, reliability, min = 0, max = 1, truecut, true.model = "4P", error.model = "Binomial", AUC = FALSE, maxJ = FALSE, raw.out = FALSE, grainsize = 100) {
+LL.ROC <- function(x = NULL, reliability, min = 0, max = 1, truecut, true.model = "4P", error.model = "Binomial", failsafe = FALSE, l = 0, u = 1, AUC = FALSE, maxJ = FALSE, raw.out = FALSE, grainsize = 100) {
   oldpar <- graphics::par(no.readonly = TRUE)
   base::on.exit(graphics::par(oldpar))
   for (i in 1:(grainsize + 1)) {
@@ -321,7 +324,7 @@ LL.ROC <- function(x = NULL, reliability, min = 0, max = 1, truecut, true.model 
     }
     axval <- LL.CA(x = x, min = min, max = max, reliability = reliability, cut = cuts[i],
                    truecut = truecut, true.model = true.model, error.model = error.model,
-                   output = "a")$classification.accuracy
+                   output = "a", l = l, u = u)$classification.accuracy
     outputmatrix[i, 1] <- 1 - axval$Specificity
     outputmatrix[i, 2] <- axval$Sensitivity
     outputmatrix[i, 3] <- axval$Youden.J
@@ -424,7 +427,7 @@ cba <- function(x) {
 #' @param max The maximum possible score to attain on the test.
 #' @param etl The value of Livingston and Lewis' effective test length. See ?ETL().
 #' @param reliability Optional specification of the test-score reliability coefficient. If specified, overrides the input of the \code{etl} argument.
-#' @param true.model The type of Beta distribution which is to be fit to the moments of the true-score distribution. Options are \code{"4P"} and \code{"2P"}, where "4P" refers to the four-parameter (with the same mean, variance, skewness, and kurtosis) and "2P" the two-parameter solution (with the same mean and variance).
+#' @param true.model The type of Beta distribution which is to be fit to the moments of the true-score distribution. Options are \code{"4P"} and \code{"2P"}, where "4P" refers to the four-parameter (with the same mean, variance, skewness, and kurtosis), and "2P" the two-parameter solution where both location-parameters are specified (with the same mean and variance).
 #' @param failsafe Logical. Whether to revert to a failsafe two-parameter solution should the four-parameter solution contain invalid parameter estimates.
 #' @param l If \code{failsafe = TRUE} or \code{true.model = "2P"}: The lower-bound of the Beta distribution. Default is 0 (i.e., the lower-bound of the Standard, two-parameter Beta distribution).
 #' @param u If \code{failsafe = TRUE} or \code{true.model = "2P"}: The upper-bound of the Beta distribution. Default is 1 (i.e., the upper-bound of the Standard, two-parameter Beta distribution).
@@ -457,10 +460,10 @@ cba <- function(x) {
 #' Beta.tp.fit(testdata, 0, 50, 50)
 #'
 #' # This example produced an l-value estimate less than 0. One way of
-#' # dealing with such an occurance is to revert to a two-parameter
+#' # dealing with such an occurrence is to revert to a two-parameter
 #' # model, specifying the l and u parameters and estimating the
 #' # alpha and beta parameters necessary to produce a Beta distribution
-#' # with the same mean and variance as the observed-score distribution.
+#' # with the same mean and variance as the estimated true-score distribution.
 #'
 #' # Suppose you have good theoretical reasons to fix the l parameter at a
 #' # value of 0.25 (e.g., the test is composed of multiple-choice questions
@@ -471,13 +474,13 @@ cba <- function(x) {
 #' Beta.tp.fit(testdata, 0, 50, 50, true.model = "2P", l = 0.25, u = 0.7256552)
 #' @export
 Beta.tp.fit <- function(x, min, max, etl, reliability = NULL, true.model = "4P", failsafe = FALSE, l = 0, u = 1, alpha = NA, beta = NA, output = "parameters") {
-  moments <- list()
-  if (failsafe) {
-    l.save <- l
-    u.save <- u
-    alpha.save <- alpha
-    beta.save <- beta
+  if(output != "parameters") {
+    moments <- list()
   }
+  l.save <- l
+  u.save <- u
+  alpha.save <- alpha
+  beta.save <- beta
   if (!is.null(reliability)) {
     etl <- ETL(base::mean(x), stats::var(x), min, max, reliability)
   }
@@ -505,15 +508,23 @@ Beta.tp.fit <- function(x, min, max, etl, reliability = NULL, true.model = "4P",
       alpha <- params$alpha
       beta <- params$beta
     }
-    if (true.model == "2P" | true.model == "2p" | (failsafe & (any(is.na(c(l, u, alpha, beta))) | (l < 0 | u > 1 | alpha <= 0 | beta <= 0)))) {
+    if ((true.model == "2P" | true.model == "2p") | (failsafe & (any(is.na(c(l, u, alpha, beta))) | (l < 0 | u > 1 | alpha <= 0 | beta <= 0)))) {
       if ((failsafe & (any(is.na(c(l, u, alpha, beta))) | (l < 0 | u > 1 | alpha <= 0 | beta <= 0)))) {
         warning(paste("Fail-safe engaged: l = ", l, ", u = ", u, ", alpha = ", alpha, ", beta = ", beta,
                       ". Finding permissible solution for the true-score distribution in accordance with specifications.", sep = ""))
-        l <- l.save
-        u <- u.save
-        alpha <- alpha.save
-        beta <- beta.save
       }
+      if ((true.model != "2p" & true.model != "2P") & is.na(l.save)) {
+        l <- 0
+        } else {
+          l <- l.save
+        }
+      if ((true.model != "2p" & true.model != "2P") & is.na(u.save)) {
+        u <- 1
+        } else {
+          u <- u.save
+        }
+      alpha <- alpha.save
+      beta <- beta.save
       if (!is.na(alpha) & !is.na(beta) & is.na(l) & is.na(u)) {
         l <- LABMSU(alpha = alpha, beta = beta, mean = tp.m1, variance = tp.s2)
         u <- UABMSL(alpha = alpha, beta = beta, mean = tp.m1, variance = tp.s2)
@@ -530,12 +541,12 @@ Beta.tp.fit <- function(x, min, max, etl, reliability = NULL, true.model = "4P",
       if (is.na(alpha) & !is.na(beta) & !is.na(l) & !is.na(u)) {
         alpha <- AMS(mean = tp.m1, variance = tp.s2, l = l,u = u, beta = beta)
       }
-      if (!is.na(alpha) & !is.na(beta) & !is.na(l) & !is.na(u)) {
+      if (!is.na(alpha) & is.na(beta) & !is.na(l) & !is.na(u)) {
         beta <- BMS(mean = tp.m1, variance = tp.s2, l = l, u = u, alpha = alpha)
       }
       if (is.na(alpha) & is.na(beta) & !is.na(l) & !is.na(u)) {
-        alpha <- AMS(mean = tp.m1, variance = tp.s2, l = l, u = u)
-        beta <- BMS(mean = tp.m1, variance = tp.s2, l = l, u = u)
+        alpha <- AMS(mean = tp.m1, variance = tp.s2, l = l, u = u, beta = NULL)
+        beta <- BMS(mean = tp.m1, variance = tp.s2, l = l, u = u, alpha = NULL)
       }
     }
     return(list("l" = l, "u" = u, "alpha" = alpha, "beta" = beta, "etl" = etl))

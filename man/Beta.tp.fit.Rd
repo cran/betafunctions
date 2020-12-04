@@ -30,7 +30,7 @@ Beta.tp.fit(
 
 \item{reliability}{Optional specification of the test-score reliability coefficient. If specified, overrides the input of the \code{etl} argument.}
 
-\item{true.model}{The type of Beta distribution which is to be fit to the moments of the true-score distribution. Options are \code{"4P"} and \code{"2P"}, where "4P" refers to the four-parameter (with the same mean, variance, skewness, and kurtosis) and "2P" the two-parameter solution (with the same mean and variance).}
+\item{true.model}{The type of Beta distribution which is to be fit to the moments of the true-score distribution. Options are \code{"4P"} and \code{"2P"}, where "4P" refers to the four-parameter (with the same mean, variance, skewness, and kurtosis), and "2P" the two-parameter solution where both location-parameters are specified (with the same mean and variance).}
 
 \item{failsafe}{Logical. Whether to revert to a failsafe two-parameter solution should the four-parameter solution contain invalid parameter estimates.}
 
@@ -74,10 +74,10 @@ testdata <- rbinom(1000, 50, rBeta.4P(1000, .25, .75, 5, 3))
 Beta.tp.fit(testdata, 0, 50, 50)
 
 # This example produced an l-value estimate less than 0. One way of
-# dealing with such an occurance is to revert to a two-parameter
+# dealing with such an occurrence is to revert to a two-parameter
 # model, specifying the l and u parameters and estimating the
 # alpha and beta parameters necessary to produce a Beta distribution
-# with the same mean and variance as the observed-score distribution.
+# with the same mean and variance as the estimated true-score distribution.
 
 # Suppose you have good theoretical reasons to fix the l parameter at a
 # value of 0.25 (e.g., the test is composed of multiple-choice questions

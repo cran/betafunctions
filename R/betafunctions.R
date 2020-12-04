@@ -142,6 +142,7 @@ observedmoments <- function(x, type = c("raw", "central", "standardized"),  orde
 #' AMS(mean(testdata), var(testdata))
 #' @export
 AMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, l = 0, u = 1, beta = NULL, sd = NULL) {
+  alpha <- NULL
   if (!is.null(sd)) {
     variance <- sd^2
   }
@@ -168,11 +169,15 @@ AMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, 
                         (mean - u) * beta * (beta * (l - mean) /
                                                (mean - u) + beta - 6))) -  beta - 1)
   }
-  if (!is.null(mean) & !is.null(variance)) {
+  if (!is.null(mean) & !is.null(variance) & !is.null(l) & !is.null(u)) {
     alpha <- ((l - mean) * (l * (mean - u) - mean^2 + mean * u - variance)) / (variance * (l - u))
   }
-  if(alpha <= 0) {
-    warning("Parameter out of bounds (Alpha <= 0).")
+  if(is.null(alpha)) {
+    warning("Insufficient information")
+  } else {
+    if (alpha <= 0) {
+      warning("Parameter out of bounds (Alpha <= 0).")
+    }
   }
   return(alpha)
 }
@@ -208,6 +213,7 @@ AMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, 
 #' BMS(mean(testdata), var(testdata), .25, .75)
 #' @export
 BMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, l = 0, u = 1, alpha = NULL, sd = NULL) {
+  beta <- NULL
   if (!is.null(sd)) {
     var <- sd^2
   }
@@ -234,11 +240,15 @@ BMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, 
                        (l - mean) * (alpha + alpha * (mean - u) / (l - mean) - 6))) - alpha - 1)
 
   }
-  if (!is.null(mean) & !is.null(variance)) {
+  if (!is.null(mean) & !is.null(variance) & !is.null(l) & !is.null(u)) {
     beta <- (mean - u) * (l * (u - mean) + mean^2 - mean * u + variance) / (variance * (u - l))
   }
-  if (beta <= 0) {
-    warning("Parameter out of bounds (Beta <= 0).")
+  if(is.null(beta)) {
+    warning("Insufficient information")
+  } else {
+    if (beta <= 0) {
+      warning("Parameter out of bounds (Beta <= 0).")
+    }
   }
   return(beta)
 }
@@ -254,7 +264,7 @@ BMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, 
 #' @param kurtosis The kurtosis (fourth standardized moment) of the target Beta probability density distribution.
 #' @param u The upper-bound of the Beta distribution. Default is NULL (i.e., does not take a specified u-parameter into account).
 #' @param sd Optional alternative to specifying \code{var}. The standard deviation of the target Standard Beta probability density distribution.
-#' @return A numeric value representing the required value for the Beta shape-parameter in order to produce a Standard Beta probability density distribution with the target mean and variance, given specified lower- and upper bounds of the Beta distribution.
+#' @return A numeric value representing the required value for the Beta lower location-parameter (\code{l}) in order to produce a Beta probability density distribution with the target moments and parameters.
 #' @examples
 #' # Generate some fictional data.
 #' set.seed(1234)
@@ -275,17 +285,27 @@ BMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, 
 #' curve(dBeta.4P(x, l, .75, 5, 3), add = TRUE, lwd = 2)
 #' @export
 LABMSU <- function(alpha = NULL, beta = NULL, u = NULL, mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, sd = NULL) {
+  l <- NULL
   if (!is.null(sd)) {
     variance <- sd^2
   }
-  if (!is.null(skewness) & !is.null(kurtosis)) {
+  if (is.null(l) & !is.null(mean) & !is.null(variance) & !is.null(skewness) & !is.null(kurtosis)) {
     alpha <- AMS(skewness = skewness, kurtosis = kurtosis)
     beta <- BMS(skewness = skewness, kurtosis = kurtosis)
     l <- mean - ((alpha * sqrt(variance * (alpha + beta + 1))) / sqrt(alpha * beta))
   }
-  if (is.null(u)) {
+  if (is.null(l) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(u)) {
+    l <- (alpha * mean - alpha * u + beta * mean) / beta
+  }
+  if(is.null(l) & is.null(alpha) & is.null(beta) & !is.null(mean) & !is.null(skewness) & !is.null(kurtosis) & !is.null(u)) {
+    alpha <- AMS(skewness = skewness, kurtosis = kurtosis)
+    beta <- BMS(skewness = skewness, kurtosis = kurtosis)
+    l <- (alpha * mean - alpha * u + beta * mean) / beta
+  }
+  if (is.null(l) & is.null(u) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(variance)) {
     l <- mean - ((alpha * sqrt(variance * (alpha + beta + 1))) / sqrt(alpha * beta))
-  } else {
+  }
+  if (is.null(l) & !is.null(u) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(variance)) {
     l <- (alpha * (mean - u)^3 + beta * variance * (beta * u - mean + u)) / (beta^2 * variance)
   }
   return(l)
@@ -302,7 +322,7 @@ LABMSU <- function(alpha = NULL, beta = NULL, u = NULL, mean = NULL, variance = 
 #' @param kurtosis The kurtosis (fourth standardized moment) of the target Beta probability density distribution.
 #' @param l The lower-bound of the Beta distribution. Default is NULL (i.e., does not take a specified l-parameter into account).
 #' @param sd Optional alternative to specifying \code{var}. The standard deviation of the target Standard Beta probability density distribution.
-#' @return A numeric value representing the required value for the Beta shape-parameter in order to produce a Standard Beta probability density distribution with the target mean and variance, given specified lower- and upper bounds of the Beta distribution.
+#' @return A numeric value representing the required value for the Beta upper location-parameter (\code{u}) in order to produce a Beta probability density distribution with the target moments and parameters.
 #' @examples
 #' # Generate some fictional data.
 #' set.seed(1234)
@@ -323,18 +343,31 @@ LABMSU <- function(alpha = NULL, beta = NULL, u = NULL, mean = NULL, variance = 
 #' curve(dBeta.4P(x, .25, u, 5, 3), add = TRUE, lwd = 2)
 #' @export
 UABMSL <- function(alpha = NULL, beta = NULL, mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, l = NULL, sd = NULL) {
+  u <- NULL
   if (!is.null(sd)) {
     variance <- sd^2
   }
-  if (!is.null(mean) & !is.null(variance) & !is.null(skewness) & !is.null(kurtosis)) {
+  if (is.null(u) & !is.null(mean) & !is.null(variance) & !is.null(skewness) & !is.null(kurtosis)) {
     alpha <- AMS(skewness = skewness, kurtosis = kurtosis)
     beta <- BMS(skewness = skewness, kurtosis = kurtosis)
     u <- mean + ((beta * sqrt(variance * (alpha + beta + 1))) / sqrt(alpha * beta))
   }
-  if (is.null(l)) {
+  if (is.null(u) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(l)) {
+    u <- (beta * (mean - l) / alpha) + mean
+  }
+  if(is.null(u) & is.null(alpha) & is.null(beta) & !is.null(mean) & !is.null(skewness) & !is.null(kurtosis) & !is.null(l)) {
+    alpha <- AMS(skewness = skewness, kurtosis = kurtosis)
+    beta <- BMS(skewness = skewness, kurtosis = kurtosis)
+    u <- (beta * (mean - l) / alpha) + mean
+  }
+  if (is.null(u) & is.null(l) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(variance)) {
     u <- mean + ((beta * sqrt(variance * (alpha + beta + 1))) / sqrt(alpha * beta))
-  } else {
+  }
+  if (is.null(u) & !is.null(l) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(variance)) {
     u <- (alpha * variance * (alpha * l + l - mean) - beta * (l - mean)^3) / (alpha^2 * variance)
+  }
+  if (is.null(u)) {
+    warning("Not enough information.")
   }
   return(u)
 }
