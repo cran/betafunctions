@@ -1,8 +1,50 @@
+# betafunctions v. 1.5.0
+
+- Added the `gchoose()` function generalizing the base-R `choose()` function to work with non-integers and positive integers by calculating the factorials of the Binomial coefficient by drawing on the Gamma distribution.
+
+- Added new set of d/p/q/r functions for a new distribution: The "Gamma-Binomial" distribution. This distribution extends the Binomial distribution to all positive real numbers. Not defined for negative integers.
+  
+  - `dGammaBinom()`: Probability Density Distribution for the Gamma-Binomial distribution.
+  
+  - `pGammaBinom()`: Cumulative Probability Density Distribution for the Gamma-Binomial distribution.
+  
+  - `qGammaBinom()`: Quantile function for the Gamma-Binomial distribution. Calls the `pGammaBinom()` function and utilizes a bisecting search-algorithm to find the number of "successful trials" corresponding to the quantile in question. This algorithm is rather slow so the function might take longer to find the appropriate quantile than what one might be used to.
+  
+  - `rGammaBinom()`: Random number generation for the Gamma-Binomial distribution. Calls the `qGammaBinom()` function. Since the `qGammaBinom()` function searches for the appropriate values using a rather inefficient search-algorithm (bisection), this random-number generation is somewhat slow. 
+
+- Added the `binomialmoments()` function, which allows for calculating the raw, central, and standardized moments of Binomial distributions (for which the Beta distribution is the conjugate prior).
+
+- Changes to the `LL.ROC()` function. 
+
+  - Changed the internal behaviour of the function to estimate the true-score distribution only once. This should greatly improve the time required to produce the plots.
+
+  - Added the `locate` argument where it is possible to ask the function to locate the operational cut-point at which the values of sensitivity or NPV are greater than or equal to some value, or specificity or PPV are lesser than or equal to some value.
+  
+  - Added the `maxAcc` argument to locate the cut-point at which the Accuracy statistic is maximized.
+  
+  - The raw-output print-out now contains the cut-point specific Accuracy, PPV, and NPV statistics as well.
+  
+- Changes to the `afac` and `dfac` functions.
+
+  - Due to the problems associated with calculating descending and ascending factorials for low-valued integers by means of the gamma function (particularly for descending factorials), a direct-arithmetic solution is implemented and set as the default method. In order to use the gamma function rather than direct arithmetic, specify any value other than "product" as part of the `method` argument.
+  
+- Changes to the `tsm` function.
+
+  - The `tsm` function now calls the `dfac` function with the direct-arithmetic method for calculating descending factorials as default. In order to use the gamma function rather than direct arithmetic, specify any value other than "product" as part of the `method` argument.
+
+- Correction to the `LL.CA()` function. The Binomial error distribution evaluated up to and including the cut-point. The intended behaviour was to evaluate up to but NOT including the cut-point. Prior to this correction, it is expected that the `LL.CA()` function will have underestimated accuracy somewhat.
+
+  - This new behaviour applies to the `dBeta.pBinom()` function as well, which is contrary to the default behaviour of base-R's `pbinom()` function.
+
+---
+
 # betafunctions v. 1.4.4
 
 - Fixed a bug with the true-score distribution fitting procedure in the `Beta.tp.fit()` that could occur for low integer values.
 
 - Minor changes to the documentation for various functions.
+
+---
 
 # betafunctions v. 1.4.3
 
