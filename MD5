@@ -1,8 +1,8 @@
-b9f8b2a590a9130b9a3375bfed55c6db *DESCRIPTION
-388206e2428484b10b37387f446dd246 *NAMESPACE
-725340b7e4fa2d572f5d9ed86a95d064 *NEWS.md
-ef43668ae0dceee76bc64212b2879c2d *R/betafunctions.R
-e44738eaf7f070ab0587f515cbce5ab6 *R/classification.R
+fc78c2beafe4e964eb1cd2d7926d8dfc *DESCRIPTION
+8131ecb2651da1380008092d7d37b2d1 *NAMESPACE
+312b2e2c74d0956fd9933500a4e39dd7 *NEWS.md
+d22187c60a2c73a8149084c719c638a2 *R/betafunctions.R
+4f102d4f3961d2d96d91685f48769d79 *R/classification.R
 a3be99713deb2299321678d8d8227a8c *README.md
 2b608b6aa98ae95b6dd723b45f0d6570 *man/AMS.Rd
 c56421a1c1deec7a7ee8568e297305c2 *man/AUC.Rd
@@ -15,13 +15,14 @@ cd7acc668c56079dfd37126915a3c9a3 *man/Beta.4p.fit.Rd
 0cc23147a02fcf2f047434919a2d7906 *man/Beta.tp.fit.Rd
 c92fbcdfd9427189c24ca059660a5cae *man/ETL.Rd
 f407c72460e43065751e7e1e3c92d7df *man/LABMSU.Rd
-6b0cdcc37f6b31ebdeb6eba732992f4d *man/LL.CA.Rd
-ba5859993053f7b9aeb579d7fde92c29 *man/LL.ROC.Rd
+7a49910c17a0c751f8bece227328965c *man/LL.CA.MC.Rd
+efdba9d344b79ffe51a72d7e7c546f8f *man/LL.CA.Rd
+033292191cf74f999675b95f7c6360f9 *man/LL.ROC.Rd
 0a330c91b04f1ed73f362dc2f03716e4 *man/MLA.Rd
 509920729bde40b92f2f3f08fb539853 *man/MLB.Rd
 fb754ede2b6f563ff2df397890590b1b *man/MLM.Rd
 c89f4dad713c118f943faa0455daaf43 *man/UABMSL.Rd
-7f92987e9ad55939b2b2ca844e89340f *man/afac.Rd
+55b30e2a48e974b9e999b3a62144398d *man/afac.Rd
 f0f6e074ffc5b33a8e31e7d630b55f06 *man/betamoments.Rd
 5afd56f959fb5ec2362e522102364fec *man/binomialmoments.Rd
 c13c8fee0716625bf6521ac59da883d4 *man/caStats.Rd
@@ -34,7 +35,7 @@ c7e6c422f3f7d849c9727dae5373a7c7 *man/dBeta.pBeta.Rd
 6e671f8473071c2ccf782865a1dcc5f6 *man/dBeta.pGammaBinom.Rd
 97bfedb822955b7a208b3b1a24ef4ca6 *man/dBetaMS.Rd
 5a50a1b85b9c6197dd3f0acf02a2ef13 *man/dGammaBinom.Rd
-191e70e5b6d4ade9069cc09269d2aa07 *man/dfac.Rd
+5247f14bfda94cc70600ab602d32bcd9 *man/dfac.Rd
 1fec05683d1183357bbf315e8389bba5 *man/gchoose.Rd
 1577ad4af756de7b39bd61a6e3e0ba2f *man/observedmoments.Rd
 ca97cb4ba2dd5430f1e024c14a8c117e *man/pBeta.4P.Rd
@@ -45,5 +46,5 @@ fa7c225481275eaabb8b75d146e24f6c *man/qBetaMS.Rd
 904dc45483c1ebbc45bbb33cef92f974 *man/qGammaBinom.Rd
 548a996671f67e62904bea996e657962 *man/rBeta.4P.Rd
 b3725587e26f340f3b08db9bee0303fd *man/rBetaMS.Rd
-5c63a263ebca4ec2cc49037bb31e3c77 *man/rGammaBinom.Rd
+342fbad889b18466dd40e00ef8282583 *man/rGammaBinom.Rd
 7324ea20fa1d252a0d4cbe33a42fdc9d *man/tsm.Rd
