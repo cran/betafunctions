@@ -38,7 +38,8 @@ ETL <- function(mean, variance, min = 0, max = 1, reliability) {
 #' @param failsafe Logical value indicating whether to engage the automatic fail-safe defaulting to the two-parameter Beta true-score distribution if the four-parameter fitting procedure produces impermissible parameter estimates. Default is \code{TRUE} (i.e., the function will engage failsafe if the four-parameter Beta-distribution fitting-procedure produced impermissible estimates).
 #' @param l If \code{true.model = "2P"} or \code{failsafe = TRUE}, the lower-bound location parameter to be used in the two-parameter fitting procedure. Default is 0 (i.e., the lower-bound of the Standard Beta distribution).
 #' @param u If \code{true.model = "2P"} or \code{failsafe = TRUE}, the upper-bound location parameter to be used in the two-parameter fitting procedure. Default is 1 (i.e., the upper-bound of the Standard Beta distribution).
-#' @return A list containing the estimated parameters necessary for the approach (i.e., the effective test-length and the beta distribution parameters), the confusion matrix containing estimated proportions of true/false pass/fail categorizations for a test, diagnostic performance statistics, and / or a classification consistency matrix and indices. Accuracy output includes a confusion matrix and diagnostic performance indices, and consistency output includes a consistency matrix and consistency indices \code{p} (expected proportion of agreement between two independent test administrations), \code{p_c} (proportion of agreement on two independent administrations expected by chance alone), and \code{Kappa} (Cohen's Kappa).
+#' @param modelfit Allows for controlling the chi-squre test for model fit. The argument takes a vector of two values. The first value is to represent the initial number of bins the distribution of scores is to be divided in to. This value is set to a default of 10. If this default results in too few bins to conduct the chi-square test, this value can be made larger. The second value represents the minimum number of observations that the bins should consist of. In accordance with standard recommendations for chi-square tests, the default value is set to 10.
+#' @return A list containing the estimated parameters necessary for the approach (i.e., the effective test-length and the beta distribution parameters), a chi-square test of model-fit, the confusion matrix containing estimated proportions of true/false pass/fail categorizations for a test, diagnostic performance statistics, and / or a classification consistency matrix and indices. Accuracy output includes a confusion matrix and diagnostic performance indices, and consistency output includes a consistency matrix and consistency indices \code{p} (expected proportion of agreement between two independent test administrations), \code{p_c} (proportion of agreement on two independent administrations expected by chance alone), and \code{Kappa} (Cohen's Kappa).
 #' @note It should be noted that this implementation differs from the original articulation of Livingston and Lewis (1995) in some respects. First, the procedure includes a number of diagnostic performance (accuracy) indices which the original procedure enables but that were not included. Second, the way consistency is calculated differs substantially from the original articulation of the procedure, which made use of a split-half approach. Rather, this implementation uses the approach to estimating classification consistency outlined by Hanson (1991).
 #' @note A shiny application providing a GUI for this method is available at https://hthaa.shinyapps.io/shinybeta/ .
 #' @examples
@@ -87,7 +88,7 @@ ETL <- function(mean, variance, min = 0, max = 1, reliability) {
 #' @references Lord. Frederic M. (1965). A Strong True-Score Theory, With Applications. Psychometrika, 30(3).
 #' @references Lewis, Don and Burke, C. J. (1949). The Use and Misuse of the Chi-Square Test. Psychological Bulletin, 46(6).
 #' @export
-LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P", truecut = NULL, output = c("accuracy", "consistency"), failsafe = TRUE, l = 0, u = 1) {
+LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P", truecut = NULL, output = c("accuracy", "consistency"), failsafe = TRUE, l = 0, u = 1, modelfit = c("nbins" = 10, "minbin" = 10)) {
   out <- base::list()
   if (class(x) != "list") {
     if ((base::min(x) < min) | (base::max(x) > max)) {
@@ -95,6 +96,9 @@ LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P
                     base::min(x), ", observed max = ", base::max(x), ").", sep = ""))
     }
     N <- ETL(base::mean(x), stats::var(x), min = min, max = max, reliability = reliability)
+    if (startsWith(as.character(true.model), "2")) {
+      failsafe <- FALSE
+    }
     params <- Beta.tp.fit(x, min = min, max = max, etl = N, true.model = true.model, failsafe = failsafe, l = l, u = u)
     if (params$l < 0 | params$u > 1) {
       warning(paste("Parameter out of bounds: l = ", round(params$l, 4), ", u = ", round(params$u, 4), ", alpha = ", round(params$alpha, 4), ", beta = ", round(params$beta, 4),
@@ -108,12 +112,12 @@ LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P
   if (base::is.null(truecut)) {
     truecut <- cut
   }
+  N <- base::round(N)
   cut <- (cut - min) / (max - min)
   truecut <- (truecut - min) / (max - min)
-  N <- base::round(N)
   params[["etl_rounded"]] <- N
   out[["parameters"]] <- params
-  tcut <- round(seq(0, N, N / 10))
+  tcut <- round(seq(0, N, N / modelfit[1]))
   mdlfit <- matrix(nrow = 2, ncol = length(tcut) - 1)
   rownames(mdlfit) <- c("Expected", "Observed")
   if (class(x) != "list") {
@@ -136,7 +140,7 @@ LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P
     for (i in 1:ncol(mdlfit)) {
       if (i < ncol(mdlfit)) {
         if (any(mdlfit[, i] < ncol(mdlfit))) {
-          if (any(mdlfit[, i] < 10)) {
+          if (any(mdlfit[, i] < modelfit[2])) {
             mdlfit[, i + 1] <- mdlfit[, i + 1] + mdlfit[, i]
             mdlfit[, i] <- NA
           }
@@ -144,7 +148,7 @@ LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P
       }
     }
     mdlfit <- mdlfit[, apply(mdlfit, 2, function(x) {any(!is.na(x))})]
-    if (any(mdlfit[, ncol(mdlfit)] < 10)) {
+    if (any(mdlfit[, ncol(mdlfit)] < modelfit[2])) {
       mdlfit[, ncol(mdlfit) - 1] <- mdlfit[, ncol(mdlfit) - 1] + mdlfit[, ncol(mdlfit)]
       mdlfit <- mdlfit[, -ncol(mdlfit)]
     }
@@ -216,7 +220,8 @@ LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P
 #' @param failsafe Logical value indicating whether to engage the automatic fail-safe defaulting to the two-parameter Beta true-score distribution if the four-parameter fitting procedure produces impermissible parameter estimates. Default is \code{TRUE} (i.e., the function will engage failsafe if the four-parameter Beta-distribution fitting-procedure produced impermissible estimates).
 #' @param l If \code{true.model = "2P"} or \code{failsafe = TRUE}, the lower-bound location parameter to be used in the two-parameter fitting procedure. Default is 0 (i.e., the lower-bound of the Standard Beta distribution).
 #' @param u If \code{true.model = "2P"} or \code{failsafe = TRUE}, the upper-bound location parameter to be used in the two-parameter fitting procedure. Default is 1 (i.e., the upper-bound of the Standard Beta distribution).
-#' @return A list containing the estimated parameters necessary for the approach (i.e., the effective test-length and the beta distribution parameters), the confusion matrix containing estimated proportions of true/false pass/fail categorizations for a test, diagnostic performance statistics, and / or a classification consistency matrix and indices. Accuracy output includes a confusion matrix and diagnostic performance indices, and consistency output includes a consistency matrix and consistency indices \code{p} (expected proportion of agreement between two independent test administrations), \code{p_c} (proportion of agreement on two independent administrations expected by chance alone), and \code{Kappa} (Cohen's Kappa).
+#' @param modelfit Allows for controlling the chi-squre test for model fit. The argument takes a vector of two values. The first value is to represent the initial number of bins the distribution of scores is to be divided in to. This value is set to a default of 10. If this default results in too few bins to conduct the chi-square test, this value can be made larger. The second value represents the minimum number of observations that the bins should consist of. In accordance with standard recommendations for chi-square tests, the default value is set to 10.
+#' @return A list containing the estimated parameters necessary for the approach (i.e., the effective test-length and the beta distribution parameters), a chi-square test of model-fit, the confusion matrix containing estimated proportions of true/false pass/fail categorizations for a test, diagnostic performance statistics, and / or a classification consistency matrix and indices. Accuracy output includes a confusion matrix and diagnostic performance indices, and consistency output includes a consistency matrix and consistency indices \code{p} (expected proportion of agreement between two independent test administrations), \code{p_c} (proportion of agreement on two independent administrations expected by chance alone), and \code{Kappa} (Cohen's Kappa).
 #' @note It should be noted that this implementation differs from the original articulation of Livingston and Lewis (1995) in some respects. First, the procedure includes a number of diagnostic performance (accuracy) indices which the original procedure enables but that were not included. Second, the way consistency is calculated differs substantially from the original articulation of the procedure, which made use of a split-half approach. Rather, this implementation uses the approach to estimating classification consistency outlined by Hanson (1991).
 #' @examples
 #' # Generate some fictional data. Say, 1000 individuals take a test with a
@@ -255,7 +260,7 @@ LL.CA <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P
 #' @references Lord. Frederic M. (1965). A Strong True-Score Theory, With Applications. Psychometrika, 30(3).
 #' @references Lewis, Don and Burke, C. J. (1949). The Use and Misuse of the Chi-Square Test. Psychological Bulletin, 46(6).
 #' @export
-LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P", failsafe = TRUE, l = 0, u = 1) {
+LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = "4P", failsafe = TRUE, l = 0, u = 1, modelfit = c("nbins" = 10, "minbin" = 10)) {
   out <- base::list()
   if (class(x) != "list") {
     if ((base::min(x) < min) | (base::max(x) > max)) {
@@ -263,6 +268,9 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
                     base::min(x), ", observed max = ", base::max(x), ").", sep = ""))
     }
     N <- ETL(base::mean(x), stats::var(x), min = min, max = max, reliability = reliability)
+    if (startsWith(as.character(true.model), "2")) {
+      failsafe <- FALSE
+    }
     params <- Beta.tp.fit(x, min = min, max = max, etl = N, true.model = true.model, failsafe = failsafe, l = l, u = u)
     if (params$l < 0 | params$u > 1) {
       warning(paste("Parameter out of bounds: l = ", round(params$l, 4), ", u = ", round(params$u, 4), ", alpha = ", round(params$alpha, 4), ", beta = ", round(params$beta, 4),
@@ -278,8 +286,8 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
   params[["etl_rounded"]] <- N
   out[["parameters"]] <- params
   pcut <- c(0, cut, 1)
-  ocut <- floor(pcut * N)
-  tcut <- round(seq(0, N, N / 10))
+  ocut <- round(pcut * N)
+  tcut <- round(seq(0, N, N / modelfit[1]))
   mdlfit <- matrix(nrow = 2, ncol = length(tcut) - 1)
   rownames(mdlfit) <- c("Expected", "Observed")
   camat <- matrix(ncol = length(cut) + 1, nrow = length(cut) + 1)
@@ -290,22 +298,22 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
       mdlfit[1, j] <- stats::integrate(function(x) {
         if(j == 1) {
           dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(tcut[j + 1] - 1, N, x))
+        } else {
+          if (j != 1 & j != (length(tcut) - 1)) {
+            dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(tcut[j + 1] - 1, N, x) - stats::pbinom(tcut[j] - 1, N, x))
           } else {
-            if (j != 1 & j != (length(tcut) - 1)) {
-              dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(tcut[j + 1] - 1, N, x) - stats::pbinom(tcut[j] - 1, N, x))
-              } else {
-                dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(tcut[j + 1], N, x) - stats::pbinom(tcut[j] - 1, N, x))
-              }
-            }
-        }, lower = 0, upper = 1)$value
+            dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(tcut[j + 1], N, x) - stats::pbinom(tcut[j] - 1, N, x))
+          }
+        }
+      }, lower = 0, upper = 1)$value
       mdlfit[2, j] <- length(x[x < tcut[j + 1] & x >= tcut[j]])
-      }
+    }
     mdlfit[1, ] <- (mdlfit[1, ] / sum(mdlfit[1, ])) * length(x)
 
     for (i in 1:ncol(mdlfit)) {
       if (i < ncol(mdlfit)) {
         if (any(mdlfit[, i] < ncol(mdlfit))) {
-          if (any(mdlfit[, i] < 10)) {
+          if (any(mdlfit[, i] < modelfit[2])) {
             mdlfit[, i + 1] <- mdlfit[, i + 1] + mdlfit[, i]
             mdlfit[, i] <- NA
           }
@@ -313,7 +321,7 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
       }
     }
     mdlfit <- mdlfit[, apply(mdlfit, 2, function(x) {any(!is.na(x))})]
-    if (any(mdlfit[, ncol(mdlfit)] < 10)) {
+    if (any(mdlfit[, ncol(mdlfit)] < modelfit[2])) {
       mdlfit[, ncol(mdlfit) - 1] <- mdlfit[, ncol(mdlfit) - 1] + mdlfit[, ncol(mdlfit)]
       mdlfit <- mdlfit[, -ncol(mdlfit)]
     }
@@ -332,20 +340,20 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
         if (j == 1) {
           rnam <- NULL
           cnam <- NULL
-          }
+        }
         if (j != (length(cut) + 1)) {
           if (j == 1) {
             rnam[j] <- paste("Observed <", pcut[j + 1] * max)
             cnam[j] <- paste("True     <", pcut[j + 1] * max)
-            } else {
-              rnam[j] <- paste(" >=", pcut[j] * max, "& <", pcut[j + 1] * max)
-              cnam[j] <- paste(" >=", pcut[j] * max, "& <", pcut[j + 1] * max)
-              }
           } else {
-            rnam[j] <- paste(" >=", pcut[j] * max)
-            cnam[j] <- paste(" >=", pcut[j] * max)
+            rnam[j] <- paste(" >=", pcut[j] * max, "& <", pcut[j + 1] * max)
+            cnam[j] <- paste(" >=", pcut[j] * max, "& <", pcut[j + 1] * max)
           }
+        } else {
+          rnam[j] <- paste(" >=", pcut[j] * max)
+          cnam[j] <- paste(" >=", pcut[j] * max)
         }
+      }
       colnames(camat) <- cnam
       rownames(camat) <- rnam
     }
@@ -353,13 +361,13 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
       camat[j, i] <- stats::integrate(function(x) {
         if(j == 1) {
           dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1] - 1, N, x))
+        } else {
+          if (j != 1 & j != (length(cut) + 1)) {
+            dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1] - 1, N, x) - stats::pbinom(ocut[j] - 1, N, x))
           } else {
-            if (j != 1 & j != (length(cut) + 1)) {
-              dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1] - 1, N, x) - stats::pbinom(ocut[j] - 1, N, x))
-              } else {
-                dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1], N, x) - stats::pbinom(ocut[j] - 1, N, x))
-              }
-            }
+            dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1], N, x) - stats::pbinom(ocut[j] - 1, N, x))
+          }
+        }
       }, lower = pcut[i], upper = pcut[i + 1])$value
     }
   }
@@ -404,24 +412,42 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
     }
     for (j in 1:(length(cut) + 1)) {
       ccmat[j, i] <- stats::integrate(function(x) {
-        if(j == 1) {
+        if (j == 1) {
           if (i == 1) {
-            dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * ((stats::pbinom(ocut[j + 1] - 1, N, x)) * (stats::pbinom(ocut[i + 1] - 1, N, x)))
+            dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * stats::pbinom(ocut[j + 1] - 1, N, x) * stats::pbinom(ocut[i + 1] - 1, N, x)
           } else {
-            dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * ((stats::pbinom(ocut[j + 1] - 1, N, x)) *
-                                                                            (stats::pbinom(ocut[i + 1] - 1, N, x) - stats::pbinom(ocut[i] - 1, N, x)))
+            if (i == (length(cut) + 1)) {
+              dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * stats::pbinom(ocut[j + 1] - 1, N, x) *
+                (stats::pbinom(ocut[i + 1], N, x) - stats::pbinom(ocut[i] - 1, N, x))
+            } else {
+              dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * stats::pbinom(ocut[j + 1] - 1, N, x) *
+                (stats::pbinom(ocut[i + 1] - 1, N, x) - stats::pbinom(ocut[i] - 1, N, x))
+            }
           }
         } else {
-          if ((j != 1 & j != (length(cut) + 1))) {
-            dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * ((stats::pbinom(ocut[j + 1] - 1, N, x) - stats::pbinom(ocut[j] - 1, N, x)) *
-              (stats::pbinom(ocut[i + 1] - 1, N, x) - stats::pbinom(ocut[i] - 1, N, x)))
-          } else {
-            if (i != 1 & i != (length(cut) + 1)) {
-              dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * ((stats::pbinom(ocut[j + 1], N, x) - stats::pbinom(ocut[j] - 1, N, x)) *
-                                                                              (stats::pbinom(ocut[i + 1], N, x) - stats::pbinom(ocut[i] - 1, N, x)))
+          if (j == (length(cut) + 1)) {
+            if (i == 1) {
+              dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1], N, x) - stats::pbinom(ocut[j] - 1, N, x)) * stats::pbinom(ocut[i + 1] - 1, N, x)
             } else {
-              dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * ((stats::pbinom(ocut[j + 1], N, x) - stats::pbinom(ocut[j] - 1, N, x)) *
-                                                                              (stats::pbinom(ocut[i + 1] - 1, N, x) - stats::pbinom(ocut[i] - 1, N, x)))
+              if (i == (length(cut) + 1)) {
+                dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1], N, x) - stats::pbinom(ocut[j] - 1, N, x)) *
+                  (stats::pbinom(ocut[i + 1], N, x) - stats::pbinom(ocut[i] - 1, N, x))
+              } else {
+                dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1], N, x) - stats::pbinom(ocut[j] - 1, N, x)) *
+                  (stats::pbinom(ocut[i + 1] - 1, N, x) - stats::pbinom(ocut[i] - 1, N, x))
+              }
+            }
+          } else {
+            if (i == 1) {
+              dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1] - 1, N, x) - stats::pbinom(ocut[j] - 1, N, x)) * stats::pbinom(ocut[i + 1] - 1, N, x)
+            } else {
+              if (i == (length(cut) + 1)) {
+                dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1] - 1, N, x) - stats::pbinom(ocut[j] - 1, N, x)) *
+                  (stats::pbinom(ocut[i + 1], N, x) - stats::pbinom(ocut[i] - 1, N, x))
+              } else {
+                dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * (stats::pbinom(ocut[j + 1] - 1, N, x) - stats::pbinom(ocut[j] - 1, N, x)) *
+                  (stats::pbinom(ocut[i + 1] - 1, N, x) - stats::pbinom(ocut[i] - 1, N, x))
+              }
             }
           }
         }
@@ -448,6 +474,7 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
   out[["consistency"]][["specific"]] <- ccout
   base::return(out)
 }
+
 
 #' Confusion matrix
 #'
