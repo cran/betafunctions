@@ -16,16 +16,16 @@ caStats(tp, tn, fp, fn)
 \item{fn}{The frequency or rate of false-negative classifications.}
 }
 \value{
-A list of diagnostic performance statistics based on true/false positive/negative statistics. Specifically, the sensitivity, specificity, positive likelihood ratio (LR.pos), negative likelihood ratio (LR.neg), positive predictive value (PPV), negative predictive value (NPV), Youden's J. (Youden.J), and Accuracy.
+A list of diagnostic performance statistics based on true/false positive/negative statistics. Specifically, the sensitivity, specificity, positive predictive value (PPV), negative predictive value (NPV), Youden's J. (Youden.J), and Accuracy.
 }
 \description{
 Provides a set of statistics often used for conveying information regarding the certainty of classifications based on tests.
 }
 \examples{
-# Generate some fictional data. Say, 100 individuals take a test with a
+# Generate some fictional data. Say, 1000 individuals take a test with a
 # maximum score of 100 and a minimum score of 0.
 set.seed(1234)
-testdata <- rbinom(100, 100, rBeta.4P(100, 0.25, 0.75, 5, 3))
+testdata <- rbinom(1000, 100, rBeta.4P(1000, 0.25, 0.75, 5, 3))
 hist(testdata, xlim = c(0, 100))
 
 # Suppose the cutoff value for attaining a pass is 50 items correct, and
@@ -38,7 +38,4 @@ max = 100)$confusionmatrix
 # feed it the appropriate entries of the confusion matrix.
 caStats(tp = cmat["True", "Positive"], tn = cmat["True", "Negative"],
 fp = cmat["False", "Positive"], fn = cmat["False", "Negative"])
-}
-\references{
-Glas et al. (2003). The Diagnostic Odds Ratio: A Single Indicator of Test Performance, Journal of Clinical Epidemiology, 1129-1135, 56(11). doi: 10.1016/S0895-4356(03)00177-X
 }

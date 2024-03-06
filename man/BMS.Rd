@@ -2,33 +2,18 @@
 % Please edit documentation in R/betafunctions.R
 \name{BMS}
 \alias{BMS}
-\title{Beta Shape-Parameter Given Location-Parameters, Mean, Variance, Skewness, Kurtosis and Alpha Shape-Parameter of a Four-Parameter Beta PDD.}
+\title{Beta Shape-Parameter Given Location-Parameters, Mean, and Variance of a Four-Parameter Beta Probability Density Distribution.}
 \usage{
-BMS(
-  mean = NULL,
-  variance = NULL,
-  skewness = NULL,
-  kurtosis = NULL,
-  l = 0,
-  u = 1,
-  alpha = NULL,
-  sd = NULL
-)
+BMS(mean, variance, l = 0, u = 1, sd = NULL)
 }
 \arguments{
 \item{mean}{The mean (first raw moment) of the target Standard Beta probability density distribution.}
 
 \item{variance}{The variance (second central moment) of the target Standard Beta probability density distribution.}
 
-\item{skewness}{The skewness (third standardized moment) of the target Beta probability density distribution.}
+\item{l}{The lower-bound location parameter of the Beta distribution. Default is 0 (as it is for the Standard Beta distribution).}
 
-\item{kurtosis}{The kurtosis (fourth standardized moment) of the target Beta probability density distribution.}
-
-\item{l}{The lower-bound of the Beta distribution. Default is 0 (i.e., the lower-bound of the Standard, two-parameter Beta distribution).}
-
-\item{u}{The upper-bound of the Beta distribution. Default is 1 (i.e., the upper-bound of the Standard, two-parameter Beta distribution).}
-
-\item{alpha}{Optional specification of the Alpha shape-parameter of the target Beta distribution. Finds then the Beta parameter necessary to produce a distribution with the specified mean, given specified Alpha, l, and u parameters.}
+\item{u}{The upper-bound location parameter of the Beta distribution. Default is 1 (as it is for the Standard Beta distribution).}
 
 \item{sd}{Optional alternative to specifying \code{var}. The standard deviation of the target Standard Beta probability density distribution.}
 }

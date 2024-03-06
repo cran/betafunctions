@@ -518,7 +518,7 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
   out[["consistency"]][["overall"]][["statistics"]] <- list("p" = p, "p_c" = p_c, "Kappa" = Kappa)
   ccout <- list()
   for(i in 1:ncol(ccmat)) {
-    p <- diag(ccmat)[i]
+    p <- ccmat[i, i]
     p_c <- sum(ccmat[i, ])^2
     Kappa <- (p - p_c) / (1 - p_c)
     ccout[[paste("Category.", i, sep = "")]] <- list()
@@ -527,7 +527,6 @@ LL.CA.MC <- function(x = NULL, reliability, cut, min = 0, max = 1, true.model = 
   out[["consistency"]][["specific"]] <- ccout
   base::return(out)
 }
-
 
 #' Confusion matrix
 #'
@@ -578,12 +577,12 @@ confmat <- function(tp, tn, fp, fn, output = "freq") {
 #' @param tn The frequency or rate of true-negative classifications.
 #' @param fp The frequency or rate of false-positive classifications.
 #' @param fn The frequency or rate of false-negative classifications.
-#' @return A list of diagnostic performance statistics based on true/false positive/negative statistics. Specifically, the sensitivity, specificity, positive likelihood ratio (LR.pos), negative likelihood ratio (LR.neg), positive predictive value (PPV), negative predictive value (NPV), Youden's J. (Youden.J), and Accuracy.
+#' @return A list of diagnostic performance statistics based on true/false positive/negative statistics. Specifically, the sensitivity, specificity, positive predictive value (PPV), negative predictive value (NPV), Youden's J. (Youden.J), and Accuracy.
 #' @examples
-#' # Generate some fictional data. Say, 100 individuals take a test with a
+#' # Generate some fictional data. Say, 1000 individuals take a test with a
 #' # maximum score of 100 and a minimum score of 0.
 #' set.seed(1234)
-#' testdata <- rbinom(100, 100, rBeta.4P(100, 0.25, 0.75, 5, 3))
+#' testdata <- rbinom(1000, 100, rBeta.4P(1000, 0.25, 0.75, 5, 3))
 #' hist(testdata, xlim = c(0, 100))
 #'
 #' # Suppose the cutoff value for attaining a pass is 50 items correct, and
@@ -596,21 +595,17 @@ confmat <- function(tp, tn, fp, fn, output = "freq") {
 #' # feed it the appropriate entries of the confusion matrix.
 #' caStats(tp = cmat["True", "Positive"], tn = cmat["True", "Negative"],
 #' fp = cmat["False", "Positive"], fn = cmat["False", "Negative"])
-#' @references Glas et al. (2003). The Diagnostic Odds Ratio: A Single Indicator of Test Performance, Journal of Clinical Epidemiology, 1129-1135, 56(11). doi: 10.1016/S0895-4356(03)00177-X
 #' @export
 caStats <- function(tp, tn, fp, fn) {
-  sensitivity <-  tp / (tp + fn)
-  specificity <-  tn / (tn + fp)
-  plr <-          sensitivity / (1 - specificity)
-  nlr <-          (1 - sensitivity) / specificity
-  ppv <-          tp / (tp + fp)
-  npv <-          tn / (tn + fn)
-  accuracy <-     (tp + tn) / (tp + tn + fp + fn)
-  J <-            (sensitivity + specificity) - 1
-  base::list("Sensitivity" = sensitivity, "Specificity" = specificity,
-             "LR.pos" = plr, "LR.neg" = nlr,
-             "PPV" = ppv, "NPV" = npv,
-             "Youden.J" = J, "Accuracy" = accuracy)
+sensitivity <-  tp / (tp + fn)
+specificity <-  tn / (tn + fp)
+ppv <-          tp / (tp + fp)
+npv <-          tn / (tn + fn)
+accuracy <-     (tp + tn) / (tp + tn + fp + fn)
+J <-            (sensitivity + specificity) - 1
+base::list("Sensitivity" = sensitivity, "Specificity" = specificity,
+           "PPV" = ppv, "NPV" = npv,
+           "Youden.J" = J, "Accuracy" = accuracy)
 }
 
 #' Classification Consistency Statistics.
@@ -622,10 +617,10 @@ caStats <- function(tp, tn, fp, fn) {
 #' @param jj The frequency or rate of consistent classifications into category "j".
 #' @return A list of classification consistency statistics. Specifically, the coefficient of consistent classification (p), the coefficient of consistent classification by chance (p_c), the proportion of positive classifications due to chance (p_c_pos), the proportion of negative classifications due to chance (p_c_neg), and Cohen's Kappa coefficient.
 #' @examples
-#' # Generate some fictional data. Say, 100 individuals take a test with a
+#' # Generate some fictional data. Say, 1000 individuals take a test with a
 #' # maximum score of 100 and a minimum score of 0.
 #' set.seed(1234)
-#' testdata <- rbinom(100, 100, rBeta.4P(100, .25, .75, 5, 3))
+#' testdata <- rbinom(1000, 100, rBeta.4P(1000, .25, .75, 5, 3))
 #' hist(testdata, xlim = c(0, 100))
 #'
 #' # Suppose the cutoff value for attaining a pass is 50 items correct, and
@@ -699,8 +694,10 @@ ccStats <- function(ii, ij, ji, jj) {
 #' # Value.
 #' @export
 LL.ROC <- function(x = NULL, reliability, min = 0, max = 1, truecut, true.model = "4P", failsafe = TRUE, l = 0, u = 1, AUC = FALSE, maxJ = FALSE, maxAcc = FALSE, locate = NULL, raw.out = FALSE, grainsize = 100) {
-  oldpar <- graphics::par(no.readonly = TRUE)
-  base::on.exit(graphics::par(oldpar))
+  if (!raw.out) {
+    oldpar <- graphics::par(no.readonly = TRUE)
+    base::on.exit(graphics::par(oldpar))
+  }
   if (!is.list(x)) {
     x <- Beta.tp.fit(x, min, max, reliability = reliability, true.model = true.model, failsafe = failsafe, l = l, u = u)
   }
@@ -956,8 +953,6 @@ mdo <- function(x, fit = FALSE) {
 #' @param failsafe Logical. Whether to revert to a fail-safe two-parameter solution should the four-parameter solution contain invalid parameter estimates.
 #' @param l If \code{failsafe = TRUE} or \code{true.model = "2P"}: The lower-bound of the Beta distribution. Default is 0 (i.e., the lower-bound of the Standard, two-parameter Beta distribution).
 #' @param u If \code{failsafe = TRUE} or \code{true.model = "2P"}: The upper-bound of the Beta distribution. Default is 1 (i.e., the upper-bound of the Standard, two-parameter Beta distribution).
-#' @param alpha If \code{failsafe = TRUE} or \code{true.model = "2P"}: The alpha shape-parameter of the Beta distribution. Default is NA (i.e., estimate the parameter).
-#' @param beta If \code{failsafe = TRUE} or \code{true.model = "2P"}: The beta shape-parameter of the Beta distribution. Default is NA (i.e., estimate the parameter).
 #' @param output Option to specify true-score distribution moments as output if the value of the output argument does not equal \code{"parameters"}.
 #' @return A list with the parameter values of a four-parameter Beta distribution. "l" is the lower location-parameter, "u" the upper location-parameter, "alpha" the first shape-parameter, "beta" the second shape-parameter, and "etl" the effective test length.
 #' @references Hanson, B. A. (1991). Method of Moments Estimates for the Four-Parameter Beta Compound Binomial Model and the Calculation of Classification Consistency Indexes. American College Testing Research Report Series. Retrieved from https://files.eric.ed.gov/fulltext/ED344945.pdf
@@ -997,88 +992,39 @@ mdo <- function(x, fit = FALSE) {
 #' # estimate above (u = 0.7256552) as such:
 #' Beta.tp.fit(testdata, 0, 50, 50, true.model = "2P", l = 0.25, u = 0.7256552)
 #' @export
-Beta.tp.fit <- function(x, min, max, etl, reliability = NULL, true.model = "4P", failsafe = FALSE, l = 0, u = 1, alpha = NA, beta = NA, output = "parameters") {
-  if(output != "parameters") {
-    moments <- base::list()
-  }
-  true.model <- base::as.character(true.model)
-  l.save <- l
-  u.save <- u
-  alpha.save <- alpha
-  beta.save <- beta
-  if (!base::is.null(reliability)) {
+Beta.tp.fit <- function(x, min, max, etl = NULL, reliability = NULL, true.model = "4P", failsafe = FALSE, l = 0, u = 1, output = "parameters") {
+  if (is.null(etl)) {
     etl <- ETL(base::mean(x), stats::var(x), min, max, reliability)
   }
-  x <- (x - min) / (max - min) * etl
-  tp.m1 <- tsm(x, 1, etl)
-  tp.m2 <- tsm(x, 2, etl)
-  tp.m3 <- tsm(x, 3, etl)
-  tp.m4 <- tsm(x, 4, etl)
-  tp.s2 <- tp.m2 - tp.m1^2
-  if (output != "parameters") {
-    tp.s3 <- (tp.m3 - 3 * tp.m1 * tp.m2 + 2 * tp.m1^3)
-    tp.s4 <- (tp.m4 - 4 * tp.m1 * tp.m3 + 6 * tp.m1^2 * tp.m2 - 3 * tp.m1^4)
-  }
-  tp.g3 <- (tp.m3 - 3 * tp.m1 * tp.m2 + 2 * tp.m1^3) / (sqrt(tp.s2)^3)
-  tp.g4 <- (tp.m4 - 4 * tp.m1 * tp.m3 + 6 * tp.m1^2 * tp.m2 - 3 * tp.m1^4) / (sqrt(tp.s2)^4)
+  x <- (x - min)/(max - min) * etl
+  m <- HB.tsm(x, 4, etl, 0)
+  s2 <- m[2] - m[1]^2
+  s3 <- (m[3] - 3 * m[1] * m[2] + 2 * m[1]^3)
+  s4 <- (m[4] - 4 * m[1] * m[3] + 6 * m[1]^2 * m[2] - 3 * m[1]^4)
+  g3 <- (m[3] - 3 * m[1] * m[2] + 2 * m[1]^3) / (sqrt(s2)^3)
+  g4 <- (m[4] - 4 * m[1] * m[3] + 6 * m[1]^2 * m[2] - 3 * m[1]^4) / (sqrt(s2)^4)
   if (output == "parameters") {
-    if (base::startsWith(true.model, "4")) {
-      params <- Beta.4p.fit(mean = tp.m1, variance = tp.s2, skewness = tp.g3, kurtosis = tp.g4)
-      l <- params$l
-      u <- params$u
-      alpha <- params$alpha
-      beta <- params$beta
-    }
-    if (base::startsWith(true.model, "2") | (failsafe & (base::any(base::is.na(c(l, u, alpha, beta))) | (l < 0 | u > 1 | alpha <= 0 | beta <= 0)))) {
-      if ((failsafe & (base::any(base::is.na(c(l, u, alpha, beta))) | (l < 0 | u > 1 | alpha <= 0 | beta <= 0)))) {
-        warning(paste("Fail-safe engaged: l = ", l, ", u = ", u, ", alpha = ", alpha, ", beta = ", beta,
+    if (startsWith(as.character(true.model), "4")) {
+      out <- Beta.4p.fit(mean = m[1], variance = s2, skewness = g3, kurtosis = g4)
+      if (failsafe == TRUE & (out$l < 0 | out$u > 1)) {
+        warning(paste("Fail-safe engaged: l = ", out$l, ", u = ", out$u, ", alpha = ", out$alpha, ", beta = ", out$beta,
                       ". \n  Finding permissible solution for the true-score distribution in accordance with specifications.", sep = ""))
-      }
-      if (!base::startsWith(true.model, "2") & base::is.na(l.save)) {
-        l <- 0
-        } else {
-          l <- l.save
-        }
-      if (!base::startsWith(true.model, "2") & base::is.na(u.save)) {
-        u <- 1
-        } else {
-          u <- u.save
-        }
-      alpha <- alpha.save
-      beta <- beta.save
-      if (!base::is.na(alpha) & !base::is.na(beta) & base::is.na(l) & base::is.na(u)) {
-        l <- LABMSU(alpha = alpha, beta = beta, mean = tp.m1, variance = tp.s2)
-        u <- UABMSL(alpha = alpha, beta = beta, mean = tp.m1, variance = tp.s2)
-      }
-      if (!base::is.na(alpha) & !base::is.na(beta) & base::is.na(l) & !base::is.na(u)) {
-        l <- LABMSU(alpha = alpha, beta = beta, mean = tp.m1, variance = tp.s2, u = u)
-      }
-      if (!base::is.na(alpha) & !base::is.na(beta) & !base::is.na(l) & base::is.na(u)) {
-        u <- UABMSL(alpha = alpha, beta = beta, mean = tp.m1, variance = tp.s2, l = l)
-      }
-      if (!base::is.na(alpha) & base::is.na(beta) & !base::is.na(l) & !base::is.na(u)) {
-        beta <- BMS(mean = tp.m1, variance = tp.s2, l = l, u = u, alpha = alpha)
-      }
-      if (base::is.na(alpha) & !base::is.na(beta) & !base::is.na(l) & !base::is.na(u)) {
-        alpha <- AMS(mean = tp.m1, variance = tp.s2, l = l,u = u, beta = beta)
-      }
-      if (!base::is.na(alpha) & base::is.na(beta) & !base::is.na(l) & !base::is.na(u)) {
-        beta <- BMS(mean = tp.m1, variance = tp.s2, l = l, u = u, alpha = alpha)
-      }
-      if (base::is.na(alpha) & base::is.na(beta) & !base::is.na(l) & !base::is.na(u)) {
-        alpha <- AMS(mean = tp.m1, variance = tp.s2, l = l, u = u, beta = NULL)
-        beta <- BMS(mean = tp.m1, variance = tp.s2, l = l, u = u, alpha = NULL)
+        out <- Beta.2p.fit(mean = m[1], variance = s2, l = l, u = u)
       }
     }
-    base::return(base::list("l" = l, "u" = u, "alpha" = alpha, "beta" = beta, "etl" = etl))
+    if (startsWith(as.character(true.model), "2")) {
+      out <- Beta.2p.fit(mean = m[1], variance = s2, l = l, u = u)
+    }
+    out[["etl"]] <- etl
+    return(out)
   } else {
-    moments[["Raw"]] <- base::list(tp.m1, tp.m2, tp.m3, tp.m4)
-    moments[["Central"]] <- base::list(0, tp.s2, tp.s3, tp.s4)
-    moments[["Standardized"]] <- base::list(0, 1, tp.g3, tp.g4)
+    moments <- list()
+    moments[["Raw"]] <- base::list(m[1], m[2], m[3], m[4])
+    moments[["Central"]] <- base::list(0, s2, s3, s4)
+    moments[["Standardized"]] <- base::list(0, 1, g3, g4)
     base::return(moments)
   }
 }
-
 
 #' Estimate Beta True-Score Distribution Based on Observed-Score Raw-Moments and Lord's k.
 #'
@@ -1097,14 +1043,14 @@ Beta.tp.fit <- function(x, min, max, etl, reliability = NULL, true.model = "4P",
 #' # Generate some fictional data. Say 1000 individuals take a 100-item test
 #' # where all items are equally difficult, and the true-score distribution
 #' # is a four-parameter Beta distribution with location parameters l = 0.25,
-#' # u = 0.75, alpha = 5, and beta = 3, and the error distribution is a
-#' # compound Binomial with Lord's k = 2:
+#' # u = 0.75, alpha = 5, and beta = 3, and the error distribution is Binomial
+#' # with Lord's k = 0:
 #' set.seed(12)
-#' testdata <- rcBinom(1000, 100, 2, rBeta.4P(1000, 0.25, 0.75, 5, 3))
+#' testdata <- rbinom(1000, 100, rBeta.4P(1000, 0.25, 0.75, 5, 3))
 #'
 #' # To estimate the four-parameter Beta distribution parameters from this
 #' # sample of observations:
-#' HB.beta.tp.fit(testdata, 100, 2)
+#' HB.beta.tp.fit(testdata, 100, 0)
 #' @export
 HB.beta.tp.fit <- function(x, N, k, true.model = "4P", failsafe = FALSE, l = 0, u = 1) {
   m <- HB.tsm(x, 4, N, k)
@@ -1113,13 +1059,14 @@ HB.beta.tp.fit <- function(x, N, k, true.model = "4P", failsafe = FALSE, l = 0, 
   g4 <- (m[4] - 4 * m[1] * m[3] + 6 * m[1]^2 * m[2] - 3 * m[1]^4) / (sqrt(s2)^4)
   if (startsWith(as.character(true.model), "4")) {
     out <- Beta.4p.fit(mean = m[1], variance = s2, skewness = g3, kurtosis = g4)
-  }
-  if (startsWith(as.character(true.model), "2") | (failsafe & (any(is.na(out)) | any(out < 0)))) {
-    if (failsafe & (any(is.na(out)) | any(out < 0))) {
+    if (failsafe == TRUE & (out$l < 0 | out$u > 1)) {
       warning(paste("Fail-safe engaged: l = ", out$l, ", u = ", out$u, ", alpha = ", out$alpha, ", beta = ", out$beta,
                     ". \n  Finding permissible solution for the true-score distribution in accordance with specifications.", sep = ""))
+      out <- Beta.2p.fit(mean = m[1], variance = s2, l = l, u = u)
     }
-    out <- list("alpha" = AMS(m[1], s2, l, u), "beta" = BMS(m[1], s2, l, u), "l" = l, "u" = u)
+  }
+  if (startsWith(as.character(true.model), "2")) {
+    out <- Beta.2p.fit(mean = m[1], variance = s2, l = l, u = u)
   }
   out[["k"]] <- k
   out[["N"]] <- N
@@ -1267,7 +1214,6 @@ HB.tsm <- function(x, r, N, k) {
   m
 }
 
-
 #' Tabular organization of accuracy and consistency output from the \code{LL.CA.MC()} function.
 #'
 #' @description Function that takes the output from the \code{LL.CA.MC()} function and organizes it in a table with accuracy and consistency indices represented by columns and categories as rows.
@@ -1297,7 +1243,7 @@ HB.tsm <- function(x, r, N, k) {
 #' # concisely in a tabular format.
 #' MC.out.tabular(output)
 MC.out.tabular <- function(x) {
-  tab.out <- base::matrix(nrow = length(x$accuracy$specific), ncol = 15)
+  tab.out <- base::matrix(nrow = length(x$accuracy$specific), ncol = 13)
   base::colnames(tab.out) <- base::c("TP", "FP", "TN", "FN", base::names(x$accuracy[[2]][[2]][[2]]), "p", "p_c", "Kappa")
   nams <- NULL
   for (i in 1:base::length((x$accuracy$specific))) {
@@ -1307,7 +1253,7 @@ MC.out.tabular <- function(x) {
       tab.out[i, j + 4] <- x$accuracy[[2]][[i]][[2]][[j]]
     }
     for (k in 1:base::length(x$consistency[[2]][[i]][[1]])) {
-      tab.out[i, k + 12] <- x$consistency[[2]][[i]][[1]][[k]]
+      tab.out[i, k + 10] <- x$consistency[[2]][[i]][[1]][[k]]
     }
   }
   base::rownames(tab.out) <- nams
@@ -1320,7 +1266,7 @@ MC.out.tabular <- function(x) {
 #' @param x The output object from the \code{LL.CA()}, \code{LL.MC.CA()}, \code{HB.CA()}, or \code{HB.CA.MC()} functions.
 #' @param x.tickat The points along the x-axis that bins are to be labeled. Default is \code{NULL} (places a tick for each of the bins).
 #' @param y.tickat The points along the y-axis where frequencies are to be labelled. Default is \code{NULL}.
-#' @param y.lim The limits of the y-axis (freqencies). Useful for keeping the scale equal across several plots.
+#' @param y.lim The limits of the y-axis (frequencies). Useful for keeping the scale equal across several plots.
 #' @param main.lab The main label (title) of the plot.
 #' @param x.lab The label for the x-axis (the bins).
 #' @param y.lab The label for the y-axis (the frequencies).
@@ -1480,7 +1426,7 @@ HB.CA <- function(x = NULL, reliability, cut, testlength, true.model = "4P", tru
     if (startsWith(as.character(true.model), "2")) {
       failsafe <- FALSE
     }
-    params <- HB.beta.tp.fit(x, testlength, k)
+    params <- HB.beta.tp.fit(x, testlength, k, true.model = true.model, failsafe = failsafe, l = l, u = u)
     if (params$l < 0 | params$u > 1) {
       warning(paste("Parameter out of bounds: l = ", round(params$l, 4), ", u = ", round(params$u, 4), ", alpha = ", round(params$alpha, 4), ", beta = ", round(params$beta, 4),
                     ". Consider constraining the fitting procedure further (e.g., set the location-parameters).", sep = ""))
@@ -1559,9 +1505,12 @@ HB.CA <- function(x = NULL, reliability, cut, testlength, true.model = "4P", tru
     ccmat <- matrix(ncol = params$N + 1, nrow = params$N + 1)
     for (i in 0:params$N) {
       for (j in 0:params$N) {
-        ccmat[i + 1, j + 1] <- stats::integrate(function(x) {dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * dcBinom(i, params$N, params$k, x) * dcBinom(j, params$N, params$k, x)}, lower = 0, upper = 1)$value
+        if (i <= j) {
+          ccmat[i + 1, j + 1] <- stats::integrate(function(x) {dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * dcBinom(i, params$N, params$k, x) * dcBinom(j, params$N, params$k, x)}, lower = 0, upper = 1)$value
+        }
       }
     }
+    ccmat[lower.tri(ccmat)] <- t(ccmat)[lower.tri(ccmat)]
     p.ii <- sum(ccmat[1:cut, 1:cut])
     p.jj <- sum(ccmat[(cut + 1):(params$N + 1), (cut + 1):(params$N + 1)])
     p.ij <- sum(ccmat[1:cut, (cut + 1):(params$N + 1)])
@@ -1577,7 +1526,6 @@ HB.CA <- function(x = NULL, reliability, cut, testlength, true.model = "4P", tru
   }
   base::return(out)
 }
-
 #' ROC curves for the Hanson and Brennan approach.
 #'
 #' @description Generate a ROC curve plotting the false-positive rate against the true-positive rate at different cut-off values across the observed-score scale.
@@ -1621,8 +1569,10 @@ HB.CA <- function(x = NULL, reliability, cut, testlength, true.model = "4P", tru
 #' # LL.ROC() function.
 #' @export
 HB.ROC <- function(x = NULL, reliability, testlength, truecut, true.model = "4P", failsafe = TRUE, l = 0, u = 1, AUC = FALSE, maxJ = FALSE, maxAcc = FALSE, locate = NULL, raw.out = FALSE, grainsize = testlength) {
-  oldpar <- graphics::par(no.readonly = TRUE)
-  base::on.exit(graphics::par(oldpar))
+  if (!raw.out) {
+    oldpar <- graphics::par(no.readonly = TRUE)
+    base::on.exit(graphics::par(oldpar))
+  }
   if (!is.list(x)) {
     k <- Lords.k(x, testlength, reliability)
     x <- HB.beta.tp.fit(x, testlength, k, true.model = true.model, failsafe = failsafe, l = l, u = u)
@@ -1742,12 +1692,12 @@ HB.ROC <- function(x = NULL, reliability, testlength, truecut, true.model = "4P"
 #'    rawdata[, i] <- rbinom(1000, 1, p.success)
 #'  }
 #'
-#' # Suppose the cutoff value for being placed in the lower category is a score
-#' # below 10, middle category 15, and the upper category 15 or above. Using the
-#' # cba() function to estimate the reliability of this test, to use the
-#' # HB.CA.MC() function or estimating diagnostic performance and consistency
-#' # indices of classifications when using several cut-points:
-#' (output <- HB.CA.MC(rowSums(rawdata), cba(rawdata), c(10, 15), 20))
+#' # Suppose the cutoff value for attaining a pass is 10 items correct, and
+#' # that the reliability of this test was estimated using the Cronbach's Alpha
+#' # estimator. To estimate and retrieve the estimated parameters, confusion and
+#' # consistency matrices, and accuracy and consistency indices using HB.CA():
+#' (output <- HB.CA.MC(x = rowSums(rawdata), reliability = cba(rawdata),
+#' cut = c(8, 12), testlength = 20))
 #'
 #' # The output for this function can get quite verbose as more categories are
 #' # included. The output from the function can be fed to the MC.out.tabular()
@@ -1765,7 +1715,7 @@ HB.CA.MC <- function(x = NULL, reliability, cut, testlength, true.model = "4P", 
     if (startsWith(as.character(true.model), "2")) {
       failsafe <- FALSE
     }
-    params <- HB.beta.tp.fit(x, testlength, k)
+    params <- HB.beta.tp.fit(x, testlength, k, true.model = true.model, failsafe = failsafe, l = l, u = u)
     if (params$l < 0 | params$u > 1) {
       warning(paste("Parameter out of bounds: l = ", round(params$l, 4), ", u = ", round(params$u, 4), ", alpha = ", round(params$alpha, 4), ", beta = ", round(params$beta, 4),
                     ". Consider constraining the fitting procedure further (e.g., set the location-parameters).", sep = ""))
@@ -1899,9 +1849,12 @@ HB.CA.MC <- function(x = NULL, reliability, cut, testlength, true.model = "4P", 
     ccmat.bc <- matrix(ncol = params$N + 1, nrow = params$N + 1)
     for (i in 0:params$N) {
       for (j in 0:params$N) {
-        ccmat.bc[i + 1, j + 1] <- stats::integrate(function(x) {dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * dcBinom(i, params$N, params$k, x) * dcBinom(j, params$N, params$k, x)}, lower = 0, upper = 1)$value
+        if (i <= j) {
+          ccmat.bc[i + 1, j + 1] <- stats::integrate(function(x) {dBeta.4P(x, params$l, params$u, params$alpha, params$beta) * dcBinom(i, params$N, params$k, x) * dcBinom(j, params$N, params$k, x)}, lower = 0, upper = 1)$value
+        }
       }
     }
+    ccmat.bc[lower.tri(ccmat.bc)] <- t(ccmat.bc)[lower.tri(ccmat.bc)]
     for (i in 1:ncol(ccmat)) {
       for (j in 1:ncol(ccmat)) {
         if (i == 1 & j == 1) {
@@ -1945,7 +1898,7 @@ HB.CA.MC <- function(x = NULL, reliability, cut, testlength, true.model = "4P", 
   out[["consistency"]][["overall"]][["statistics"]] <- list("p" = p, "p_c" = p_c, "Kappa" = Kappa)
   ccout <- list()
   for(i in 1:ncol(ccmat)) {
-    p <- diag(ccmat)[i]
+    p <- ccmat[i, i]
     p_c <- sum(ccmat[i, ])^2
     Kappa <- (p - p_c) / (1 - p_c)
     ccout[[paste("Category.", i, sep = "")]] <- list()

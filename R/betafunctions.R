@@ -18,36 +18,28 @@
 #' @return A list of moment types, each a list of moment orders.
 #' @export
 betamoments <- function(alpha, beta, l = 0, u = 1, types = c("raw", "central", "standardized"), orders = 4) {
-  a <- alpha
-  b <- beta
-  moments <- base::rep(base::list(base::rep(base::list(NULL), orders)), base::length(types))
-  type <- 1
+  moments <- base::list()
   if (any(types == "raw")) {
     for (i in 1:orders) {
-      moments[[type]][[i]] <- stats::integrate(function(x) { dBeta.4P(x, l, u, a, b) * x^i },
+      moments[["raw"]][[i]] <- stats::integrate(function(x) { dBeta.4P(x, l, u, alpha, beta) * x^i },
                                             lower = l, upper = u)$value
     }
-    base::names(moments)[type] <- "raw"
-    type <- type + 1
   }
   if (any(types == "central")) {
-    Mu <- stats::integrate(function(x) { dBeta.4P(x, l, u, a, b) * x^1 }, lower = l, upper = u)$value
+    Mu <- stats::integrate(function(x) { dBeta.4P(x, l, u, alpha, beta) * x^1 }, lower = l, upper = u)$value
     for (i in 1:orders) {
-      moments[[type]][[i]] <- stats::integrate(function(x) { dBeta.4P(x, l, u, a, b) * (x - Mu)^i },
+      moments[["central"]][[i]] <- stats::integrate(function(x) { dBeta.4P(x, l, u, alpha, beta) * (x - Mu)^i },
                                             lower = l, upper = u)$value
     }
-    base::names(moments)[type] <- "central"
-    type <- type + 1
   }
   if (base::any(types == "standardized")) {
-    Mu <- stats::integrate(function(x) { dBeta.4P(x, l, u, a, b) * x^1 }, lower = l, upper = u)$value
-    SigmaSquared <- stats::integrate(function(x) { dBeta.4P(x, l, u, a, b) * (x - Mu)^2 },
+    Mu <- stats::integrate(function(x) { dBeta.4P(x, l, u, alpha, beta) * x^1 }, lower = l, upper = u)$value
+    SigmaSquared <- stats::integrate(function(x) { dBeta.4P(x, l, u, alpha, beta) * (x - Mu)^2 },
                        lower = l, upper = u)$value
     for (i in 1:orders) {
-      moments[[type]][[i]] <- stats::integrate(function(x) { dBeta.4P(x, l, u, a, b) * ((x - Mu)^i / sqrt(SigmaSquared)^i) },
+      moments[["standardized"]][[i]] <- stats::integrate(function(x) { dBeta.4P(x, l, u, alpha, beta) * ((x - Mu)^i / sqrt(SigmaSquared)^i) },
                                             lower = l, upper = u)$value
     }
-    base::names(moments)[type] <- "standardized"
   }
   return(moments)
 }
@@ -55,8 +47,8 @@ betamoments <- function(alpha, beta, l = 0, u = 1, types = c("raw", "central", "
 #' Compute Mode of Two- and Four-Parameter Beta Probability Density distribution.
 #'
 #' @description Computes the mode of a Beta distribution with specified shape- and location parameters.
-#' @param alpha The alpha shape parameter of the PDD.
-#' @param beta The beta shape parameter of the PDD.
+#' @param alpha The alpha shape parameter of the Probability Density Distribution.
+#' @param beta The beta shape parameter of the Probability Density Distribution.
 #' @param l The first (lower) location parameter of a four-parameter distribution. Default set to \code{0}.
 #' @param u The second (upper) location parameter of a four-parameter distribution. Default set to \code{1}.
 #' @examples
@@ -102,40 +94,39 @@ betamedian <- function(alpha, beta, l = 0, u = 1) {
 #' @param types A character vector determining which moment-types are to be calculated. Permissible values are "raw", "central", and "standardized".
 #' @param orders The number of moment-orders to be calculated for each of the moment-types.
 #' @examples
-#' # Assume some variable follows a four-parameter Beta distribution with
-#' # location parameters l = 0.25 and u = .75, and shape parameters a = 5
-#' # and b = 3. To compute the first four raw, central, and standardized
-#' # moments of this distrubution using betamoments():
-#' betamoments(a = 5, b = 3, l = .25, u = .75,
-#' types = c("raw", "central", "standardized"), orders = 4)
-#' @references Hanson, B. A (1991). Method of Moments Estimates for the Four-Parameter Beta Compound Binomial Model and the Calculation of Classification Consistency Indexes. American College Testing Research Report Series.
+#' # Assume some variable follows a Binomial distribution with number of trials
+#' # equal to 100 and a probability of success on each trial of 0.75. To compute
+#' # the first four raw, central, and standardized moments of this distribution
+#' # using binomialmoments():
+#' binomialmoments(n = 100, p = 0.75, types = c("raw", "central",
+#' "standardized"), orders = 4)
+#'
+#' # To only compute the (e.g.) standardized moments:
+#' binomialmoments(n = 100, p = 0.75, types = "standardized")
+#'
+#' # To compute moments beyond the fourth order (e.g., the sixth):
+#' binomialmoments(n = 100, p = 0.75, orders = 6)
 #' @return A list of moment types, each a list of moment orders.
 #' @export
 binomialmoments <- function(n, p, types = c("raw", "central", "standardized"), orders = 4) {
-  moments <- base::rep(base::list(base::rep(base::list(NULL), orders)), base::length(types))
-  type <- 1
+  moments <- base::list()
   if (any(types == "raw")) {
     for (i in 1:orders) {
-      moments[[type]][[i]] <- base::sum(stats::dbinom(0:n, n, p) * (0:n)^i)
+      moments[["raw"]][[i]] <- base::sum(stats::dbinom(0:n, n, p) * (0:n)^i)
     }
-    base::names(moments)[type] <- "raw"
-    type <- type + 1
   }
   if (any(types == "central")) {
     Mu <- base::sum(stats::dbinom(0:n, n, p) * (0:n))
     for (i in 1:orders) {
-      moments[[type]][[i]] <- base::sum(stats::dbinom(0:n, n, p) * ((0:n - Mu)^i))
+      moments[["central"]][[i]] <- base::sum(stats::dbinom(0:n, n, p) * ((0:n - Mu)^i))
     }
-    base::names(moments)[type] <- "central"
-    type <- type + 1
   }
   if (base::any(types == "standardized")) {
     Mu <- base::sum(stats::dbinom(0:n, n, p) * (0:n))
     SigmaSquared <- base::sum(stats::dbinom(0:n, n, p) * ((0:n - Mu)^2))
     for (i in 1:orders) {
-      moments[[type]][[i]] <- base::sum(stats::dbinom(0:n, n, p) * ((0:n - Mu)^i / sqrt(SigmaSquared)^i))
+      moments[["standardized"]][[i]] <- base::sum(stats::dbinom(0:n, n, p) * ((0:n - Mu)^i / sqrt(SigmaSquared)^i))
     }
-    base::names(moments)[type] <- "standardized"
   }
   return(moments)
 }
@@ -191,7 +182,6 @@ betabinomialmoments <- function(N, l, u, alpha, beta, types = c("raw", "central"
   return(moments)
 }
 
-
 #' Compute Moments of Observed Value Distribution.
 #'
 #' @description Computes Raw, Central, or Standardized moment properties of a vector of observed scores.
@@ -214,58 +204,43 @@ betabinomialmoments <- function(N, l, u, alpha, beta, types = c("raw", "central"
 #' @export
 observedmoments <- function(x, type = c("raw", "central", "standardized"),  orders = 4, correct = TRUE) {
   x <- stats::na.omit(x)
-  types <- 1
-  momentorders <- base::list()
+  moments <- base::list()
   if (base::any(type == "raw")) {
-    mu <- list(rep(vector(length = 1), orders))
     for (i in 1:orders) {
-      mu[i] <- base::sum(x^i)/base::length(x)
+      moments[["raw"]][[i]] <- base::sum(x^i)/base::length(x)
     }
-    momentorders[[base::length(momentorders) + 1]] <- mu
-    base::names(momentorders)[types] <- "raw"
-    types <- types + 1
   }
   if (base::any(type == "central")) {
-    sigma <- base::list(base::rep(base::vector(length = 1), orders))
     for (i in 1:orders) {
       if (correct) {
-        sigma[i] <- base::sum((x - base::mean(x))^i)/(base::length(x) - 1)
+        moments[["central"]][[i]] <- base::sum((x - base::mean(x))^i)/(base::length(x) - 1)
       }
       else {
-        sigma[i] <- base::sum((x - base::mean(x))^i)/(base::length(x))
+        moments[["central"]][[i]] <- base::sum((x - base::mean(x))^i)/(base::length(x))
       }
     }
-    momentorders[[base::length(momentorders) + 1]] <- sigma
-    base::names(momentorders)[types] <- "central"
-    types <- types + 1
   }
   if (base::any(type == "standardized")) {
-    gamma <- base::list(base::rep(base::vector(length = 1), orders))
     for (i in 1:orders) {
       if (correct) {
-        gamma[i] <- 1 / base::length(x) * base::sum(((x - base::mean(x))^i)/sqrt(stats::var(x))^i)
+        moments[["standardized"]][[i]] <- 1 / base::length(x) * base::sum(((x - base::mean(x))^i)/sqrt(stats::var(x))^i)
       }
       else {
-        gamma[i] <- 1 / base::length(x) * base::sum(((x - base::mean(x))^i)/sqrt(stats::var(x))^i)
+        moments[["standardized"]][[i]] <- 1 / base::length(x) * base::sum(((x - base::mean(x))^i)/sqrt(stats::var(x))^i)
       }
     }
-    momentorders[[base::length(momentorders) + 1]] <- gamma
-    names(momentorders)[types] <- "standardized"
   }
-  return(momentorders)
+  return(moments)
 }
 
 
-#' Alpha Shape-Parameter Given Location-Parameters, Mean, Variance, Skewness, Kurtosis and Beta Shape-Parameter of a Four-Parameter Beta PDD.
+#' Alpha Shape-Parameter Given Location-Parameters, Mean, and Variance a Four-Parameter Beta Probability Density Distribution.
 #'
 #' @description Calculates the Beta value required to produce a Beta probability density distribution with defined moments and parameters. Be advised that not all combinations of moments and parameters can be satisfied (e.g., specifying mean, variance, skewness and kurtosis uniquely determines both location-parameters, meaning that the value of the lower-location parameter will take on which ever value it must, and cannot be specified).
 #' @param mean The mean (first raw moment) of the target Standard Beta probability density distribution.
 #' @param variance The variance (second central moment) of the target Standard Beta probability density distribution.
-#' @param skewness The skewness (third standardized moment) of the target Beta probability density distribution.
-#' @param kurtosis The kurtosis (fourth standardized moment) of the target Beta probability density distribution.
-#' @param l The lower-bound of the Beta distribution. Default is 0 (i.e., the lower-bound of the Standard, two-parameter Beta distribution).
-#' @param u The upper-bound of the Beta distribution. Default is 1 (i.e., the upper-bound of the Standard, two-parameter Beta distribution).
-#' @param beta Optional specification of the Beta shape-parameter of the target Beta distribution. Finds then the Alpha parameter necessary to produce a distribution with the specified mean, given specified Beta, l, and u parameters.
+#' @param l The lower-bound location parameter of the Beta distribution. Default is 0 (as it is for the Standard Beta distribution).
+#' @param u The upper-bound location parameter of the Beta distribution. Default is 1 (as it is for the Standard Beta distribution).
 #' @param sd Optional alternative to specifying \code{var}. The standard deviation of the target Standard Beta probability density distribution.
 #' @return A numeric value representing the required value for the Alpha shape-parameter in order to produce a  Beta probability density distribution with the target mean and variance, given specified lower- and upper bounds of the Beta distribution.
 #' @examples
@@ -281,57 +256,20 @@ observedmoments <- function(x, type = c("raw", "central", "standardized"),  orde
 #' # distribution using AMS():
 #' AMS(mean(testdata), var(testdata))
 #' @export
-AMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, l = 0, u = 1, beta = NULL, sd = NULL) {
-  alpha <- NULL
+AMS <- function(mean, variance, l = 0, u = 1, sd = NULL) {
   if (!is.null(sd)) {
     variance <- sd^2
   }
-  if (!is.null(beta) & !is.null(mean) & !is.null(skewness)) {
-    alpha <- ((beta * (l - mean) / (mean - u) + beta + 2) * sqrt(beta * (l - mean) / (mean - u)* beta) * skewness) /
-      (sqrt(beta * (l - mean) / (mean - u) + beta+ 1)) * - .5 + beta
-  }
-  if (is.null(mean) & !is.null(skewness) & !is.null(kurtosis)) {
-    r <- 6 * (kurtosis - skewness^2 - 1) / (6 + 3 * skewness^2 - 2 * kurtosis)
-    if (skewness < 0) {
-      alpha <- r / 2 * (1 + base::sqrt(1 - ((24 * (r + 1)) / ((r + 2) * (r + 3) * kurtosis - 3 * (r - 6) * (r + 1)))))
-    } else {
-      alpha <- r / 2 * (1 - base::sqrt(1 - ((24 * (r + 1)) / ((r + 2) * (r + 3) * kurtosis - 3 * (r - 6) * (r + 1)))))
-    }
-  }
-  if (!is.null(beta) & is.null(skewness)) {
-    alpha <- beta * (l - mean) / (mean - u)
-  }
-  if (!is.null(beta) & is.null(skewness) & !is.null(kurtosis) & !is.null(mean)) {
-    alpha <- ((beta * (l - mean) / (mean - u) * beta * (beta * (l - mean) /
-                                                          (mean - u) + beta + 2) * (beta * (l - mean) /
-                                                                                      (mean - u) + beta + 3) * kurtosis) /
-                (3 * (2 * (beta * (l - mean) / (mean - u) + beta)^2 + beta * (l - mean) /
-                        (mean - u) * beta * (beta * (l - mean) /
-                                               (mean - u) + beta - 6))) -  beta - 1)
-  }
-  if (!is.null(mean) & !is.null(variance) & !is.null(l) & !is.null(u)) {
-    alpha <- ((l - mean) * (l * (mean - u) - mean^2 + mean * u - variance)) / (variance * (l - u))
-  }
-  if(is.null(alpha)) {
-    warning("Insufficient information.")
-  } else {
-    if (alpha <= 0) {
-      warning("Parameter out of bounds (alpha <= 0).")
-    }
-  }
-  return(alpha)
+  return(((l - mean) * (l * (mean - u) - mean^2 + mean * u - variance)) / (variance * (l - u)))
 }
 
-#' Beta Shape-Parameter Given Location-Parameters, Mean, Variance, Skewness, Kurtosis and Alpha Shape-Parameter of a Four-Parameter Beta PDD.
+#' Beta Shape-Parameter Given Location-Parameters, Mean, and Variance of a Four-Parameter Beta Probability Density Distribution.
 #'
 #' @description Calculates the Beta value required to produce a Beta probability density distribution with defined moments and parameters. Be advised that not all combinations of moments and parameters can be satisfied (e.g., specifying mean, variance, skewness and kurtosis uniquely determines both location-parameters, meaning that the value of the lower-location parameter will take on which ever value it must, and cannot be specified).
 #' @param mean The mean (first raw moment) of the target Standard Beta probability density distribution.
 #' @param variance The variance (second central moment) of the target Standard Beta probability density distribution.
-#' @param skewness The skewness (third standardized moment) of the target Beta probability density distribution.
-#' @param kurtosis The kurtosis (fourth standardized moment) of the target Beta probability density distribution.
-#' @param l The lower-bound of the Beta distribution. Default is 0 (i.e., the lower-bound of the Standard, two-parameter Beta distribution).
-#' @param u The upper-bound of the Beta distribution. Default is 1 (i.e., the upper-bound of the Standard, two-parameter Beta distribution).
-#' @param alpha Optional specification of the Alpha shape-parameter of the target Beta distribution. Finds then the Beta parameter necessary to produce a distribution with the specified mean, given specified Alpha, l, and u parameters.
+#' @param l The lower-bound location parameter of the Beta distribution. Default is 0 (as it is for the Standard Beta distribution).
+#' @param u The upper-bound location parameter of the Beta distribution. Default is 1 (as it is for the Standard Beta distribution).
 #' @param sd Optional alternative to specifying \code{var}. The standard deviation of the target Standard Beta probability density distribution.
 #' @return A numeric value representing the required value for the Beta shape-parameter in order to produce a Standard Beta probability density distribution with the target mean and variance, given specified lower- and upper bounds of the Beta distribution.
 #' @examples
@@ -352,56 +290,20 @@ AMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, 
 #' # u = 0.75 using BMS:
 #' BMS(mean(testdata), var(testdata), 0.25, 0.75)
 #' @export
-BMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, l = 0, u = 1, alpha = NULL, sd = NULL) {
-  beta <- NULL
+BMS <- function(mean, variance, l = 0, u = 1, sd = NULL) {
   if (!is.null(sd)) {
-    var <- sd^2
+    variance <- sd^2
   }
-  if (!is.null(alpha) & !is.null(mean) & !is.null(skewness)) {
-    beta <- .5 * (((alpha + alpha * (mean - u) / (l - mean) + 2) * sqrt(alpha*alpha * (mean - u) / (l - mean)) * skewness) /
-                    (sqrt(alpha + alpha * (mean - u) / (l - mean) + 1))) + alpha
-  }
-  if (is.null(mean) & !is.null(skewness) & !is.null(kurtosis)) {
-    r <- 6 * (kurtosis - skewness^2 - 1) / (6 + 3 * skewness^2 - 2 * kurtosis)
-    if (skewness < 0) {
-      beta <- r / 2 * (1 - base::sqrt(1 - ((24 * (r + 1)) / ((r + 2) * (r + 3) * kurtosis - 3 * (r - 6) * (r + 1)))))
-    } else {
-      beta <- r / 2 * (1 + base::sqrt(1 - ((24 * (r + 1)) / ((r + 2) * (r + 3) * kurtosis - 3 * (r - 6) * (r + 1)))))
-    }
-  }
-  if (!is.null(alpha) & is.null(skewness)) {
-    beta <- alpha * (mean - u) / (l - mean)
-  }
-  if (!is.null(alpha) & is.null(skewness) & !is.null(kurtosis) & !is.null(mean)) {
-    beta <- ((alpha * alpha * (mean - u) / (l - mean) * (alpha + alpha * (mean - u) /
-                                                           (l - mean) + 2) * (alpha + alpha * (mean - u) /
-                                                                                (l - mean) + 3) * kurtosis) /
-               (3 * (2 * (alpha + alpha * (mean - u) / (l - mean))^2 + alpha * alpha * (mean - u) /
-                       (l - mean) * (alpha + alpha * (mean - u) / (l - mean) - 6))) - alpha - 1)
-
-  }
-  if (!is.null(mean) & !is.null(variance) & !is.null(l) & !is.null(u)) {
-    beta <- (mean - u) * (l * (u - mean) + mean^2 - mean * u + variance) / (variance * (u - l))
-  }
-  if(is.null(beta)) {
-    warning("Insufficient information.")
-  } else {
-    if (beta <= 0) {
-      warning("Parameter out of bounds (beta <= 0).")
-    }
-  }
-  return(beta)
+  return(((mean - u) * (l * (u - mean) + mean^2 - mean * u + variance)) / (variance * (u - l)))
 }
 
-#' Lower Location Parameter Given Shape Parameters, Mean, Variance, and Upper Location Parameter of a Four-Parameter Beta PDD.
+#' Lower Location Parameter Given Shape Parameters, Mean, Variance, and Upper Location Parameter of a Four-Parameter Beta Probability Density Distribution.
 #'
 #' @description Calculates the lower-bound value required to produce a Beta probability density distribution with defined moments and parameters. Be advised that not all combinations of moments and parameters can be satisfied (e.g., specifying mean, variance, skewness and kurtosis uniquely determines both location-parameters, meaning that the value of the lower-location parameter will take on which ever value it must, and cannot be specified).
 #' @param alpha The alpha (first) shape-parameter of the target Beta probability density distribution.
 #' @param beta The beta (second) shape-parameter of the target Beta probability density distribution.
 #' @param mean The mean (first raw moment) of the target Standard Beta probability density distribution.
 #' @param variance The variance (second central moment) of the target Standard Beta probability density distribution.
-#' @param skewness The skewness (third standardized moment) of the target Beta probability density distribution.
-#' @param kurtosis The kurtosis (fourth standardized moment) of the target Beta probability density distribution.
 #' @param u The upper-bound of the Beta distribution. Default is NULL (i.e., does not take a specified u-parameter into account).
 #' @param sd Optional alternative to specifying \code{var}. The standard deviation of the target Standard Beta probability density distribution.
 #' @return A numeric value representing the required value for the Beta lower location-parameter (\code{l}) in order to produce a Beta probability density distribution with the target moments and parameters.
@@ -424,22 +326,12 @@ BMS <- function(mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, 
 #' (l <- LABMSU(alpha = 5, beta = 3, mean = M, variance = S2, u = 0.75))
 #' curve(dBeta.4P(x, l, .75, 5, 3), add = TRUE, lwd = 2)
 #' @export
-LABMSU <- function(alpha = NULL, beta = NULL, u = NULL, mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, sd = NULL) {
+LABMSU <- function(alpha = NULL, beta = NULL, u = NULL, mean = NULL, variance = NULL,  sd = NULL) {
   l <- NULL
   if (!is.null(sd)) {
     variance <- sd^2
   }
-  if (is.null(l) & !is.null(mean) & !is.null(variance) & !is.null(skewness) & !is.null(kurtosis)) {
-    alpha <- AMS(skewness = skewness, kurtosis = kurtosis)
-    beta <- BMS(skewness = skewness, kurtosis = kurtosis)
-    l <- mean - ((alpha * sqrt(variance * (alpha + beta + 1))) / sqrt(alpha * beta))
-  }
   if (is.null(l) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(u)) {
-    l <- (alpha * mean - alpha * u + beta * mean) / beta
-  }
-  if(is.null(l) & is.null(alpha) & is.null(beta) & !is.null(mean) & !is.null(skewness) & !is.null(kurtosis) & !is.null(u)) {
-    alpha <- AMS(skewness = skewness, kurtosis = kurtosis)
-    beta <- BMS(skewness = skewness, kurtosis = kurtosis)
     l <- (alpha * mean - alpha * u + beta * mean) / beta
   }
   if (is.null(l) & is.null(u) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(variance)) {
@@ -451,15 +343,13 @@ LABMSU <- function(alpha = NULL, beta = NULL, u = NULL, mean = NULL, variance = 
   return(l)
 }
 
-#' Upper Location Parameter Given Shape Parameters, Mean, Variance, and Lower Location Parameter of a Four-Parameter Beta PDD.
+#' Upper Location Parameter Given Shape Parameters, Mean, Variance, and Lower Location Parameter of a Four-Parameter Beta Probability Density Distribution.
 #'
 #' @description Calculates the upper-bound value required to produce a Beta probability density distribution with defined moments and parameters. Be advised that not all combinations of moments and parameters can be satisfied (e.g., specifying mean, variance, skewness and kurtosis uniquely determines both location-parameters, meaning that the value of the upper-location parameter will take on which ever value it must, and cannot be specified).
 #' @param alpha The alpha shape-parameter of the target Beta probability density distribution.
 #' @param beta The beta shape-parameter of the target Beta probability density distribution.
 #' @param mean The mean (first raw moment) of the target Standard Beta probability density distribution.
 #' @param variance The variance (second central moment) of the target Standard Beta probability density distribution.
-#' @param skewness The skewness (third standardized moment) of the target Beta probability density distribution.
-#' @param kurtosis The kurtosis (fourth standardized moment) of the target Beta probability density distribution.
 #' @param l The lower-bound of the Beta distribution. Default is NULL (i.e., does not take a specified l-parameter into account).
 #' @param sd Optional alternative to specifying \code{var}. The standard deviation of the target Standard Beta probability density distribution.
 #' @return A numeric value representing the required value for the Beta upper location-parameter (\code{u}) in order to produce a Beta probability density distribution with the target moments and parameters.
@@ -482,22 +372,12 @@ LABMSU <- function(alpha = NULL, beta = NULL, u = NULL, mean = NULL, variance = 
 #' (u <- UABMSL(alpha = 5, beta = 3, mean = M, variance = S2, l = 0.25))
 #' curve(dBeta.4P(x, 0.25, u, 5, 3), add = TRUE, lwd = 2)
 #' @export
-UABMSL <- function(alpha = NULL, beta = NULL, mean = NULL, variance = NULL, skewness = NULL, kurtosis = NULL, l = NULL, sd = NULL) {
+UABMSL <- function(alpha = NULL, beta = NULL, mean = NULL, variance = NULL, l = NULL, sd = NULL) {
   u <- NULL
   if (!is.null(sd)) {
     variance <- sd^2
   }
-  if (is.null(u) & !is.null(mean) & !is.null(variance) & !is.null(skewness) & !is.null(kurtosis)) {
-    alpha <- AMS(skewness = skewness, kurtosis = kurtosis)
-    beta <- BMS(skewness = skewness, kurtosis = kurtosis)
-    u <- mean + ((beta * sqrt(variance * (alpha + beta + 1))) / sqrt(alpha * beta))
-  }
   if (is.null(u) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(l)) {
-    u <- (beta * (mean - l) / alpha) + mean
-  }
-  if(is.null(u) & is.null(alpha) & is.null(beta) & !is.null(mean) & !is.null(skewness) & !is.null(kurtosis) & !is.null(l)) {
-    alpha <- AMS(skewness = skewness, kurtosis = kurtosis)
-    beta <- BMS(skewness = skewness, kurtosis = kurtosis)
     u <- (beta * (mean - l) / alpha) + mean
   }
   if (is.null(u) & is.null(l) & !is.null(alpha) & !is.null(beta) & !is.null(mean) & !is.null(variance)) {
@@ -512,7 +392,7 @@ UABMSL <- function(alpha = NULL, beta = NULL, mean = NULL, variance = NULL, skew
   return(u)
 }
 
-#' Probability of Some Specific Observation under the Standard Beta PDD with Specific Mean and Variance.
+#' Probability of Some Specific Observation under the Beta Probability Density Distribution with Specific Location Parameters, Mean, and Variance.
 #'
 #' @description Calculates the probability of some specific observation falling under a specified interval  ([0, x] or [x, 1]) under the Standard Beta probability density distribution with defined mean and variance or standard deviation.
 #' @param q A specific point on the x-axis of the Standard Beta probability density distribution with a defined mean and variance.
@@ -520,47 +400,62 @@ UABMSL <- function(alpha = NULL, beta = NULL, mean = NULL, variance = NULL, skew
 #' @param variance The variance of the target Standard Beta probability density distribution.
 #' @param sd The standard deviation of the target Standard Beta probability density distribution.
 #' @param lower.tail Whether the density that should be considered is between the lower-end (i.e., [0 -> x]) or the higher-end of the distribution (i.e., [x -> 1]).
+#' @param l The lower-bound location parameter. Default set to 0 (the standard Beta distribution).
+#' @param u The upper-bound location parameter. Default set to 1 (the standard Beta distribution).
 #' @return A value representing the probability of a random draw from the Standard Beta probability density distribution with a defined mean and variance being from one of two defined intervals (i.e., [0 -> x] or [x -> 1]).
 #' @examples
 #' # To compute the proportion of the density under the lower-end tail of a
-#' # point along the Standard (two-parameter) PDD (e.g., 0.5) with mean of 0.6
-#' # and variance of 0.04:
+#' # point along the Standard (two-parameter) Probability Density Distribution
+#' # (e.g., 0.5) with mean of 0.6 and variance of 0.04:
 #' pBetaMS(q = 0.5, mean = 0.6, variance = 0.04)
+#'
+#' # To compute the proportion of the density under the lower-end tail of a
+#' # point along the Four-Parameter Beta Probability Density Distribution
+#' # (e.g., 50) with mean of 60 and variance of 400, and lower-bound of 0 and
+#' # upper-bound of 100:
+#' pBetaMS(q = 50, mean = 60, variance = 400, l = 0, u = 100)
 #' @export
-pBetaMS <- function(q, mean, variance = NULL, sd = NULL, lower.tail = TRUE) {
+pBetaMS <- function(q, mean, variance = NULL, sd = NULL, lower.tail = TRUE, l = 0, u = 1) {
   if ((!is.null(variance) & !is.null(sd))) {
     if (variance != sd^2) {
       warning("Nonequivalent values of variance and sd specified. Using variance.")
     }
   }
   if (base::is.null(variance) & !base::is.null(sd)) variance <- sd^2
-  stats::pbeta(q, ((mean^2 - mean^3) / variance) - mean, (mean * (1 - mean)^2) / variance + mean - 1, lower.tail = lower.tail)
+  pBeta.4P(q, l, u, AMS(mean, variance, l, u), BMS(mean, variance, l, u), lower.tail = lower.tail)
 }
 
-#' Density Under a Specific Point of the Standard Beta PDD with Specific Mean and Variance or Standard Deviation.
+#' Density Under a Specific Point of the Beta Probability Density Distribution with Specific Location Parameters, Mean, and Variance.
 #'
 #' @description Calculates the density under specific points of the Standard Beta probability density distribution with defined mean and variance or standard deviation.
-#' @param x A specific point on the x-axis of the Standard Beta PDD.
+#' @param x A specific point on the x-axis of the Standard Beta Probability Density Distribution.
 #' @param mean The mean of the target Standard Beta probability density distribution.
 #' @param variance The variance of the target Standard Beta probability density distribution.
 #' @param sd The standard deviation of the target Standard Beta probability density distribution.
+#' @param l The lower-bound location parameter. Default set to 0 (the standard Beta distribution).
+#' @param u The upper-bound location parameter. Default set to 1 (the standard Beta distribution).
 #' @return A numeric value representing the required value for the beta Shape-parameter in order to produce a Standard Beta probability density distribution with the target mean and variance.
 #' @examples
 #' # To compute the density at a specific point (e.g., 0.5) along the Standard
-#' # (two-parameter) PDD with mean of 0.6 and variance of 0.04:
+#' # (two-parameter) Probability Density Distribution with mean of 0.6 and variance of 0.04:
 #' dBetaMS(x = 0.5, mean = 0.6, variance = 0.04)
+#'
+#' # To compute the density at a specific point (e.g., 50) along the four-
+#' # parameter Beta distribution with a mean of 60, variance of 400, and lower-
+#' # bound of 0 and upper-bound of 100:
+#' dBetaMS(x = 50, mean = 60, variance = 400, l = 0, u = 100)
 #' @export
-dBetaMS <- function(x, mean, variance = NULL, sd = NULL) {
+dBetaMS <- function(x, mean, variance = NULL, sd = NULL, l = 0, u = 1) {
   if ((!base::is.null(variance) & !base::is.null(sd))) {
     if (variance != sd^2) {
       warning("Nonequivalent values of variance and sd specified. Using variance.")
     }
   }
   if (base::is.null(variance) & !base::is.null(sd)) variance <- sd^2
-  stats::dbeta(x, ((mean^2 - mean^3) / variance) - mean, (mean * (1 - mean)^2) / variance + mean - 1)
+  dBeta.4P(x, l, u, AMS(mean, variance, l, u), BMS(mean, variance, l, u))
 }
 
-#' Quantile Containing Specific Proportion of the Distribution, Given a Specific Probability of the Standard Beta PDD with Specific Mean and Variance or Standard Deviation.
+#' Quantile Containing Specific Proportion of the Distribution, Given a Specific Probability of the Beta Probability Density Distribution with Specific Mean and Variance.
 #'
 #' @description Calculates the quantile corresponding to a specific probability of some observation falling within the [0, x] (\code{lt = TRUE}) or [x, 1] (\code{lt = FALSE}) interval under the Standard Beta probability density distribution with defined mean and variance or standard deviation.
 #' @param p A value of probability marking the point of the Y-axis to correspond to the X-axis.
@@ -568,39 +463,57 @@ dBetaMS <- function(x, mean, variance = NULL, sd = NULL) {
 #' @param variance The variance of the target Standard Beta probability density distribution.
 #' @param sd The standard deviation of the target Standard Beta probability density distribution.
 #' @param lower.tail Logical. Specifies which end of the tail for which to calculate quantile. Default is \code{TRUE} (meaning, find q for lower tail.)
+#' @param l The lower-bound location parameter. Default set to 0 (the standard Beta distribution).
+#' @param u The upper-bound location parameter. Default set to 1 (the standard Beta distribution).
 #' @return A numeric value representing the quantile for which the specified proportion of observations fall within.
 #' @examples
 #' # To compute the quantile at a specific point (e.g., 0.5) along the Standard
-#' # (two-parameter) PDD with mean of 0.6 and variance of 0.04:
+#' # (two-parameter) Probability Density Distribution with mean of 0.6 and variance of 0.04:
 #' qBetaMS(p = 0.5, mean = 0.6, variance = 0.04)
+#'
+#' # To compute the quantile at a specific points(e.g., 0.5) along the four-
+#' # parameter Beta distribution with a mean of 60, variance of 400, and lower-
+#' # bound of 0 and upper-bound of 100:
+#' qBetaMS(p = 0.5, mean = 60, variance = 400, l = 0, u = 100)
 #' @export
-qBetaMS <- function(p, mean, variance = NULL, sd = NULL, lower.tail = TRUE) {
+qBetaMS <- function(p, mean, variance = NULL, sd = NULL, lower.tail = TRUE, l = 0, u = 1) {
   if ((!base::is.null(variance) & !base::is.null(sd))) {
     if (variance != sd^2) {
       warning("Nonequivalent values of variance and sd specified. Using var.")
     }
   }
   if (base::is.null(variance) & !base::is.null(sd)) variance <- sd^2
-  stats::qbeta(p, ((mean^2 - mean^3) / variance) - mean, (mean * (1 - mean)^2) / variance + mean - 1, lower.tail = lower.tail)
+  qBeta.4P(p, l, u, AMS(mean, variance, l, u), BMS(mean, variance, l, u), lower.tail = lower.tail)
 }
 
-#' Random Draw from the Standard Beta PDD With Specific Mean and Variance.
+#' Random Draw from the Beta Probability Density Distribution With Specific Mean and Variance.
 #'
 #' @description Draws random samples of observations from the Standard Beta probability density distribution with defined mean and variance.
-#' @param n Number of observations to be drawn from under the Standard Beta PDD.
+#' @param n Number of observations to be drawn from under the Standard Beta Probability Density Distribution.
 #' @param mean The mean of the target Standard Beta probability density distribution.
 #' @param variance The variance of the target Standard Beta probability density distribution.
 #' @param sd The standard deviation of the target Standard probability density distribution.
+#' @param l The lower-bound location parameter. Default set to 0 (the standard Beta distribution).
+#' @param u The upper-bound location parameter. Default set to 1 (the standard Beta distribution).
 #' @return A vector of length \code{n}, each value representing a random draw from the Standard Beta probability density distribution with defined mean and variance.
+#' @examples
+#' # To draw a random sample of 100 values from a Standard Beta distribution
+#' # with a mean of 0.6 and variance = 0.04:
+#' rBetaMS(n = 100, mean = 0.6, variance = 0.04)
+#'
+#' # To draw a random sample of 100 values from a Four-Parameter Beta
+#* # distribution with a mean of 60 and variance = 400, and a lower-bound of
+#' # 0 and an upper-bound of 100:
+#' rBetaMS(n = 100, mean = 60, variance = 400, l = 0, u = 100)
 #' @export
-rBetaMS <- function(n, mean, variance = NULL, sd = NULL) {
+rBetaMS <- function(n, mean, variance = NULL, sd = NULL, l = 0, u = 1) {
   if ((!base::is.null(variance) & !base::is.null(sd))) {
     if (variance != sd^2) {
       warning("Nonequivalent values of var and sd specified. Using var.")
     }
   }
   if (is.null(variance) & !is.null(sd)) variance <- sd^2
-  stats::rbeta(n, ((mean^2 - mean^3) / variance) - mean, (mean * (1 - mean)^2) / variance + mean - 1)
+  rBeta.4P(n, l, u, AMS(mean, variance, l, u), BMS(mean, variance, l, u))
 }
 
 #' Coordinate Generation for Marking an Area Under the Curve for the Beta Probability Density Distribution.
@@ -705,8 +618,8 @@ Beta.gfx.poly.cdf <- function(from, to, by, alpha, beta, l = 0, u = 1) {
 #' Most Likely True Alpha Value Given Observed Outcome.
 #'
 #' @description Given a fitted Standard (two-parameter) Beta Distribution, return the alpha shape-parameter value where the observed mean becomes the mode.
-#' @param alpha Observed alpha-parameter value for fitted Standard Beta PDD.
-#' @param beta Observed beta-parameter value for fitted Standard Beta PDD.
+#' @param alpha Observed alpha-parameter value for fitted Standard Beta Probability Density Distribution.
+#' @param beta Observed beta-parameter value for fitted Standard Beta Probability Density Distribution.
 #' @param x Observed proportion-correct outcome.
 #' @param n Test-length.
 #' @return The Alpha shape-parameter value for the Standard Beta probability density distribution where the observed mean is the expected mode.
@@ -729,8 +642,8 @@ MLA <- function(alpha, beta, x = NULL, n = NULL) {
 #' Most Likely True Beta Value Given Observed Outcome.
 #'
 #' @description Assuming a prior standard (two-parameter) Beta Distribution, return the beta shape-parameter value where the observed mean becomes the mode.
-#' @param alpha Observed alpha-parameter value for fitted Standard Beta PDD.
-#' @param beta Observed beta-parameter value for fitted Standard Beta PDD.
+#' @param alpha Observed alpha-parameter value for fitted Standard Beta Probability Density Distribution.
+#' @param beta Observed beta-parameter value for fitted Standard Beta Probability Density Distribution.
 #' @param x Observed proportion-correct outcome.
 #' @param n Test-length.
 #' @examples
@@ -751,11 +664,11 @@ MLB <- function(alpha, beta, x = NULL, n = NULL) {
   }
 }
 
-#' Most Likely Mean of the Standard Beta PDD, Given that the Observation is Considered the Most Likely Observation of the Standard Beta PDD (i.e., the mode).
+#' Most Likely Mean of the Standard Beta Probability Density Distribution, Given that the Observation is Considered the Most Likely Observation of the Standard Beta Probability Density Distribution (i.e., the mode).
 #'
 #' @description Assuming a prior Standard (two-parameter) Beta Distribution, returns the expected mean of the distribution under the assumption that the observed value is the most likely value of the distribution.
-#' @param alpha Observed alpha value for fitted Standard Beta PDD.
-#' @param beta Observed beta value for fitted Standard Beta PDD.
+#' @param alpha Observed alpha value for fitted Standard Beta Probability Density Distribution.
+#' @param beta Observed beta value for fitted Standard Beta Probability Density Distribution.
 #' @param x Observed proportion-correct outcome.
 #' @param n Test-length.
 #' @examples
@@ -776,9 +689,9 @@ MLM <- function(alpha, beta, x = NULL, n = NULL) {
   }
 }
 
-#' Probability Density under the Four-Parameter Beta PDD.
+#' Probability Density under the Four-Parameter Beta Probability Density Distribution.
 #'
-#' @description Gives the density at desired values of \code{x} under the Four-Parameter Beta PDD.
+#' @description Gives the density at desired values of \code{x} under the Four-Parameter Beta Probability Density Distribution.
 #' @param x Value of \code{x}.
 #' @param l The first (lower) location parameter.
 #' @param u The second (upper) location parameter.
@@ -1020,16 +933,19 @@ Beta.4p.fit <- function(scores, mean = NULL, variance = NULL, skewness = NULL, k
 #' (params.2p <- Beta.2p.fit(testdata))
 #' curve(dbeta(x, params.2p$alpha, params.2p$beta), add = TRUE)
 #' @export
-Beta.2p.fit <- function(scores, mean = NULL, variance = NULL, l = 0, u = 1) {
-  if (base::max(scores) > u | base::min(scores) < l) {
-    warning(paste("Input values outside the range of the specified location parameters of the Beta distribution (i.e., there are values falling outside the [", l, ", ", u, "] interval).", sep = ""))
+Beta.2p.fit <- function(scores = NULL, mean = NULL, variance = NULL, l = 0, u = 1) {
+  if (!is.null(scores)) {
+    if (base::max(scores) > u | base::min(scores) < l) {
+      warning(paste("Input values outside the range of the specified location parameters of the Beta distribution (i.e., there are values falling outside the [", l, ", ", u, "] interval).", sep = ""))
+    }
+    m1 <- base::mean(scores)
+    s2 <- stats::var(scores)
+  } else {
+    m1 <- mean
+    s2 <- variance
   }
-  if (base::is.null(mean) & base::is.null(variance)) {
-    mean <- base::mean(scores)
-    variance <- stats::var(scores)
-  }
-  a <- AMS(mean, variance, l, u)
-  b <- BMS(mean, variance, l, u)
+  a <- AMS(m1, s2, l, u)
+  b <- BMS(m1, s2, l, u)
   return(base::list("alpha" = a, "beta" = b, "l" = l, "u" = u))
 }
 
